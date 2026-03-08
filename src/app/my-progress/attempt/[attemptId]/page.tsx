@@ -50,7 +50,7 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ attemp
         <XCircle className="h-12 w-12 text-destructive mb-4" />
         <h1 className="text-2xl font-bold">Attempt Not Found</h1>
         <p className="text-muted-foreground mb-6">We couldn't find the details for this lesson attempt.</p>
-        <Button asChild rounded-full>
+        <Button asChild className="rounded-full">
           <Link href="/my-progress">Back to Progress</Link>
         </Button>
       </div>
@@ -107,9 +107,9 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ attemp
                 <h3 className="text-xs font-bold uppercase text-muted-foreground">AI Tutor Assessment</h3>
                 <div className={`p-6 rounded-2xl border flex gap-4 ${attempt.isCompleted ? 'bg-accent/5 border-accent/20' : 'bg-destructive/5 border-destructive/20'}`}>
                   {attempt.isCompleted ? (
-                    <CheckCircle2 className="h-6 w-6 text-accent shrink-0" />
+                    <CheckCircle2 className="h-6 w-6 text-accent shrink-0 mt-1" />
                   ) : (
-                    <XCircle className="h-6 w-6 text-destructive shrink-0" />
+                    <XCircle className="h-6 w-6 text-destructive shrink-0 mt-1" />
                   )}
                   <p className="text-sm leading-relaxed text-foreground/80">
                     {attempt.aiEvaluationResult}
@@ -148,7 +148,7 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ attemp
 
           {!attempt.isCompleted && (
             <div className="text-center py-8">
-              <Button asChild className="rounded-full h-14 px-8 text-lg font-bold shadow-xl" rounded-full>
+              <Button asChild className="rounded-full h-14 px-8 text-lg font-bold shadow-xl">
                 <Link href="/lesson">Try This Lesson Again</Link>
               </Button>
             </div>
