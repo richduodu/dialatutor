@@ -18,6 +18,7 @@ import { doc } from "firebase/firestore"
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { generateLesson } from "@/ai/flows/generate-lesson-flow"
 import { useToast } from "@/hooks/use-toast"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function LessonPage() {
   const { user, isUserLoading } = useUser()
@@ -436,6 +437,13 @@ export default function LessonPage() {
                       </div>
                     </div>
                   </div>
+
+                  <Alert className="bg-muted/50 border-none">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription className="text-[10px] italic text-muted-foreground">
+                      Note: SMS delivery is currently simulated for this demonstration. Production requires a Firebase Cloud Function for Twilio dispatch.
+                    </AlertDescription>
+                  </Alert>
                 </div>
 
                 <div className="mt-10 flex flex-col gap-3">

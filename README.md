@@ -12,17 +12,17 @@ Dial A Tutor is a voice-first educational platform designed to bridge the digita
 - **Impact Verifier Dashboard:** A public ledger for funders and NGOs to audit educational outcomes in real-time.
 - **Universal Accessibility:** Designed to be accessible via simple mobile phones (simulated through the web interface).
 
-## Connection & SMS Architecture
+## Connection & SMS Architecture (Simulation Status)
 
-The student interaction model is designed to be "asynchronous-first" to handle spotty connectivity:
+The student interaction model is designed to be "asynchronous-first" to handle spotty connectivity. **Note: The SMS/Twilio integration is currently a UI-driven simulation.**
 
 1. **Phone-Based Identity:** Students authenticate using their phone numbers. This number serves as the routing address for academic feedback.
-2. **IVR Simulation:** The web interface simulates an IVR (Interactive Voice Response) call where the AI "speaks" the lesson and the student "speaks" back. In a production environment, this is handled via a telephony provider (e.g., Twilio Voice) connecting to our Genkit flows.
-3. **SMS Feedback Loop:** 
+2. **IVR Simulation:** The web interface simulates an IVR (Interactive Voice Response) call where the AI "speaks" the lesson and the student "speaks" back.
+3. **SMS Feedback Loop (Simulated):** 
     - Upon lesson completion, a `StudentReport` is generated in Firestore.
-    - A server-side trigger (Cloud Function) detects this report.
-    - An automated SMS is dispatched to the student's registered phone number with their grade and a verification link.
-4. **Offline Synchronization:** If a student is in a zero-connectivity area, the achievement is cached locally. Once the device syncs, the SMS is triggered automatically, ensuring no learning progress is lost or unconfirmed.
+    - **Production Requirement:** A server-side Firebase Cloud Function would detect this report and dispatch an automated SMS via a provider like Twilio.
+    - **Current State:** The UI provides a visual confirmation of the SMS trigger for demonstration purposes.
+4. **Offline Synchronization:** If a student is in a zero-connectivity area, the achievement is cached locally. Once the device syncs, the backend trigger would be activated automatically.
 
 ## Tech Stack
 
