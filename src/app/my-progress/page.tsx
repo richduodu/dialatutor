@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Navbar } from "@/components/navbar"
@@ -47,6 +48,10 @@ export default function MyProgressPage() {
         <p className="mt-4 font-bold text-muted-foreground">Loading your achievements...</p>
       </div>
     )
+  }
+
+  if (!user) {
+    return null
   }
 
   return (

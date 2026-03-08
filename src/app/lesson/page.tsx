@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -111,6 +112,10 @@ export default function LessonPage() {
         <p className="mt-4 font-bold text-muted-foreground">Identifying learner...</p>
       </div>
     )
+  }
+
+  if (!user) {
+    return null
   }
 
   return (
