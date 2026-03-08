@@ -16,10 +16,12 @@ import { doc } from "firebase/firestore"
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { useToast } from "@/hooks/use-toast"
 
+import 'react-phone-number-input/style.css'
+import PhoneInput from 'react-phone-number-input'
+
 export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
-  const [countryCode, setCountryCode] = useState("+1")
-  const [phoneNumber, setPhoneNumber] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState<string | undefined>("")
   const [fullName, setFullName] = useState("")
   const [grade, setGrade] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -31,19 +33,6 @@ export default function LoginPage() {
   const { toast } = useToast()
 
   const grades = Array.from({ length: 12 }, (_, i) => `Grade ${i + 1}`)
-  
-  const countryCodes = [
-    { code: "+1", name: "US/CA" },
-    { code: "+44", name: "UK" },
-    { code: "+234", name: "NG" },
-    { code: "+91", name: "IN" },
-    { code: "+254", name: "KE" },
-    { code: "+27", name: "ZA" },
-    { code: "+61", name: "AU" },
-    { code: "+33", name: "FR" },
-    { code: "+49", name: "DE" },
-    { code: "+81", name: "JP" },
-  ]
 
   // Redirect if already logged in
   useEffect(() => {
@@ -54,9 +43,17 @@ export default function LoginPage() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
     
-    const fullPhoneNumber = `${countryCode}${phoneNumber.replace(/\D/g, '')}`
+    if (!phoneNumber) {
+      toast({
+        title: "Phone Required",
+        description: "Please enter a valid phone number.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsSubmitting(true)
     
     try {
       // In this prototype, we use anonymous sign-in to simulate the phone-based identity
@@ -69,9 +66,9 @@ export default function LoginPage() {
         setDocumentNonBlocking(studentRef, {
           id: newUser.uid,
           externalAuthId: newUser.uid,
-          phoneNumber: fullPhoneNumber,
+          phoneNumber: phoneNumber,
           name: fullName,
-          gradeLevel: grade, // Store preferred grade
+          gradeLevel: grade,
           createdAt: new Date().toISOString()
         }, { merge: true })
         
@@ -139,34 +136,16 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <div className="flex gap-2">
-                  <div className="w-32 shrink-0">
-                    <Select value={countryCode} onValueChange={setCountryCode} disabled={isSubmitting}>
-                      <SelectTrigger className="h-11 rounded-xl">
-                        <SelectValue placeholder="+1" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {countryCodes.map((c) => (
-                          <SelectItem key={c.code} value={c.code}>
-                            {c.name} ({c.code})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="relative flex-1">
-                    <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="phone" 
-                      placeholder="555-000-0000" 
-                      className="pl-10 h-11 rounded-xl"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      required
-                      disabled={isSubmitting}
-                    />
-                  </div>
+                <Label>Phone Number</Label>
+                <div className="phone-input-container">
+                   <PhoneInput
+                    placeholder="Enter phone number"
+                    value={phoneNumber}
+                    onChange={setPhoneNumber}
+                    defaultCountry="US"
+                    disabled={isSubmitting}
+                    className="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
                 </div>
               </div>
 
@@ -218,6 +197,27 @@ export default function LoginPage() {
           </CardContent>
         </Card>
       </main>
+      <style jsx global>{`
+        .PhoneInputCountry {
+          display: flex;
+          align-items: center;
+          margin-right: 0.5rem;
+        }
+        .PhoneInputCountrySelect {
+          opacity: 0;
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          cursor: pointer;
+        }
+        .PhoneInputInput {
+          flex: 1;
+          background: transparent;
+          border: none;
+          outline: none;
+          font-size: inherit;
+        }
+      `}</style>
     </div>
   )
 }
