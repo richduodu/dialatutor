@@ -33,11 +33,8 @@ const lessonPrompt = ai.definePrompt({
       { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_LOW_AND_ABOVE' },
     ],
   },
-  prompt: `You are an expert curriculum designer for a voice-based educational app called Dial-a-Lesson.
+  system: `You are an expert curriculum designer for a voice-based educational app called Dial-a-Lesson.
 Your task is to create a short, engaging oral lesson prompt for a student.
-
-Subject: {{{subject}}}
-Grade Level: {{{gradeLevel}}}
 
 GUARDRAILS:
 1. You MUST only generate content that is strictly educational and appropriate for a K-12 school environment.
@@ -45,25 +42,29 @@ GUARDRAILS:
 3. Do not engage in casual conversation, provide personal opinions, or generate content outside of academic learning.
 
 The lesson should be designed to be answered orally in 1-2 sentences. 
-It should be challenging but appropriate for the specified grade level.
+It should be challenging but appropriate for the specified grade level.`,
+  prompt: `Subject: {{{subject}}}
+Grade Level: {{{gradeLevel}}}
 
 Provide:
 1. A lesson 'title'.
 2. The 'content' (the question or prompt the student will hear).
-3. The 'expectedAnswer' (what a correct response should generally include).
-
-Your response MUST be a valid JSON object following the schema precisely.`,
+3. The 'expectedAnswer' (what a correct response should generally include).`,
 });
 
 /**
  * Helper function to retry a promise-based function with exponential backoff.
  */
-async function withRetry<T>(fn: () => Promise<T>, retries = 2, delay = 2000): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> {
   try {
     return await fn();
   } catch (error: any) {
-    const isQuotaError = error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED');
-    if (retries > 0 && isQuotaError) {
+    const errorMsg = error?.message || "";
+    const isQuotaError = errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED');
+    const isRetryableError = isQuotaError || errorMsg.includes('500') || errorMsg.includes('fetch failed');
+    
+    if (retries > 0 && isRetryableError) {
+      console.log(`Retrying AI flow due to: ${errorMsg}. Retries left: ${retries}`);
       await new Promise((resolve) => setTimeout(resolve, delay));
       return withRetry(fn, retries - 1, delay * 2);
     }
@@ -81,7 +82,7 @@ const generateLessonFlow = ai.defineFlow(
     return withRetry(async () => {
       const { output } = await lessonPrompt(input);
       if (!output) {
-        throw new Error('Failed to generate lesson content from AI tutor.');
+        throw new Error('The AI tutor was unable to generate a lesson. This may be due to safety filters or service limitations.');
       }
       return output;
     });

@@ -53,11 +53,8 @@ const evaluatePrompt = ai.definePrompt({
       { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_LOW_AND_ABOVE' },
     ],
   },
-  prompt: `You are an AI tutor designed to evaluate student spoken answers.
-The student provided an oral response to the following lesson.
-
-Lesson Content: {{{lessonContent}}}
-Expected Answer/Criteria: {{{expectedAnswer}}}
+  system: `You are an AI tutor designed to evaluate student spoken answers.
+The student provided an oral response to a specific lesson.
 
 GUARDRAILS:
 1. Your evaluation MUST remain strictly professional and educational.
@@ -71,22 +68,26 @@ Evaluation instructions:
 - Provide a clear 'transcription' of exactly what the student said.
 - Provide a detailed 'evaluation' explaining your assessment and how they can improve academically.
 - Set 'isCorrect' to true if the answer demonstrates understanding and matches the criteria, false otherwise.
-- Assign a 'score' from 0 to 100 based on accuracy, vocabulary usage, and comprehension.
+- Assign a 'score' from 0 to 100 based on accuracy, vocabulary usage, and comprehension.`,
+  prompt: `Lesson Content: {{{lessonContent}}}
+Expected Answer/Criteria: {{{expectedAnswer}}}
 
-Audio: {{media url=audioDataUri}}
-
-Your response MUST be a JSON object following the StudentSpokenAnswerEvaluationOutputSchema.`,
+Audio: {{media url=audioDataUri}}`,
 });
 
 /**
  * Helper function to retry a promise-based function with exponential backoff.
  */
-async function withRetry<T>(fn: () => Promise<T>, retries = 2, delay = 2000): Promise<T> {
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> {
   try {
     return await fn();
   } catch (error: any) {
-    const isQuotaError = error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED');
-    if (retries > 0 && isQuotaError) {
+    const errorMsg = error?.message || "";
+    const isQuotaError = errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED');
+    const isRetryableError = isQuotaError || errorMsg.includes('500') || errorMsg.includes('fetch failed');
+
+    if (retries > 0 && isRetryableError) {
+      console.log(`Retrying evaluation flow due to: ${errorMsg}. Retries left: ${retries}`);
       await new Promise((resolve) => setTimeout(resolve, delay));
       return withRetry(fn, retries - 1, delay * 2);
     }
@@ -104,7 +105,7 @@ const studentSpokenAnswerEvaluationFlow = ai.defineFlow(
     return withRetry(async () => {
       const { output } = await evaluatePrompt(input);
       if (!output) {
-        throw new Error('Failed to get evaluation output from AI tutor.');
+        throw new Error('Failed to get evaluation output from AI tutor. The response may have been blocked or the service is temporarily unavailable.');
       }
       return output;
     });
