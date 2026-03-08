@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, GraduationCap, BookOpen, Sparkles, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useUser, useFirestore } from "@/firebase"
+import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { generateLesson } from "@/ai/flows/generate-lesson-flow"
@@ -31,6 +31,13 @@ export default function LessonPage() {
   const [txHash, setTxHash] = useState<string>("")
   const [lesson, setLesson] = useState<{ id: string, title: string, content: string, expectedAnswer: string } | null>(null)
 
+  const studentRef = useMemoFirebase(() => {
+    if (!db || !user) return null
+    return doc(db, 'students', user.uid)
+  }, [db, user])
+
+  const { data: studentProfile } = useDoc(studentRef)
+
   const subjects = [
     "Mathematics",
     "Science",
@@ -41,6 +48,13 @@ export default function LessonPage() {
   ]
 
   const grades = Array.from({ length: 12 }, (_, i) => `Grade ${i + 1}`)
+
+  // Pre-fill grade level from student profile if available
+  useEffect(() => {
+    if (studentProfile?.gradeLevel && !gradeLevel) {
+      setGradeLevel(studentProfile.gradeLevel)
+    }
+  }, [studentProfile, gradeLevel])
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -60,14 +74,15 @@ export default function LessonPage() {
 
     setIsGenerating(true)
     try {
-      // Ensure student profile exists in Firestore
-      if (user && db) {
-        const studentRef = doc(db, 'students', user.uid)
-        setDocumentNonBlocking(studentRef, {
+      // Ensure student profile exists in Firestore (fallback if not created at registration)
+      if (user && db && !studentProfile) {
+        const profileRef = doc(db, 'students', user.uid)
+        setDocumentNonBlocking(profileRef, {
           id: user.uid,
           externalAuthId: user.uid,
           phoneNumber: user.phoneNumber || "Simulated Phone",
           name: user.displayName || `Learner ${user.uid.slice(0, 5)}`,
+          gradeLevel: gradeLevel,
           createdAt: new Date().toISOString()
         }, { merge: true })
       }
@@ -100,7 +115,7 @@ export default function LessonPage() {
     const studentId = user.uid
     const attemptId = crypto.randomUUID()
     
-    // 1. Save Lesson Attempt (Always save the attempt regardless of correctness)
+    // 1. Save Lesson Attempt
     const attemptRef = doc(db, 'students', studentId, 'lessonAttempts', attemptId)
     setDocumentNonBlocking(attemptRef, {
       id: attemptId,
@@ -116,7 +131,6 @@ export default function LessonPage() {
       isCompleted: evaluation.isCorrect,
     }, { merge: true })
 
-    // Only proceed to Minting and Reporting if the answer was correct
     if (evaluation.isCorrect) {
       setTimeout(() => {
         setStep(2) // Move to Minting step
@@ -161,7 +175,6 @@ export default function LessonPage() {
           sentDate: new Date().toISOString()
         }, { merge: true })
 
-        // Simulate Blockchain Minting UI delay
         setTimeout(() => {
           setTxHash(generatedTxHash)
           setMintingStatus('completed')
@@ -195,7 +208,7 @@ export default function LessonPage() {
             <p className="text-muted-foreground">Personalized AI Oral Instruction</p>
           </div>
           <Badge variant="outline" className="bg-white px-3 py-1 font-mono uppercase">
-            Learner: {user?.uid.slice(0, 5)}
+            Learner: {studentProfile?.name || user?.uid.slice(0, 5)}
           </Badge>
         </div>
 
