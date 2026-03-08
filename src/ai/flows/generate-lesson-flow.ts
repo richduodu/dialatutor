@@ -33,7 +33,7 @@ const lessonPrompt = ai.definePrompt({
       { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_LOW_AND_ABOVE' },
     ],
   },
-  system: `You are an expert curriculum designer for a voice-based educational app called Dial-a-Lesson.
+  system: `You are an expert curriculum designer for a voice-based educational app called Dial A Tutor.
 Your task is to create a short, engaging oral lesson prompt for a student.
 
 GUARDRAILS:

@@ -26,7 +26,7 @@ export default function Home() {
               </Badge>
               <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-8 text-foreground leading-[1.1] animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
                 Voice-First Learning. <br />
-                <span className="text-primary font-headline italic">Blockchain Verified.</span>
+                <span className="text-primary font-headline italic">Dial A Tutor.</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200">
                 Empowering students with oral lessons via any phone. Secure, immutable Proof of Learning on the Polygon Amoy Testnet.
@@ -169,7 +169,7 @@ export default function Home() {
             </div>
             <div className="relative z-10 max-w-2xl mx-auto space-y-8">
               <h2 className="text-4xl md:text-5xl font-black text-white leading-tight">Ready to verify the next million learners?</h2>
-              <p className="text-slate-400 text-lg">Join forward-thinking organizations using Voice2Learn to deliver and track verifiable educational impact.</p>
+              <p className="text-slate-400 text-lg">Join forward-thinking organizations using Dial A Tutor to deliver and track verifiable educational impact.</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                 <Button size="lg" className="rounded-full bg-white text-slate-900 hover:bg-slate-100 font-bold h-14 px-10" asChild>
                   <Link href="/lesson">Get Started Now</Link>
@@ -191,7 +191,7 @@ export default function Home() {
                 <div className="rounded-lg bg-primary p-1.5 text-primary-foreground">
                   <Zap className="h-6 w-6" />
                 </div>
-                <span className="text-2xl font-black tracking-tighter text-primary">Voice2Learn</span>
+                <span className="text-2xl font-black tracking-tighter text-primary">Dial A Tutor</span>
               </Link>
               <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
                 Empowering the next generation of global learners through voice-first technology and blockchain-backed transparency.
@@ -215,7 +215,7 @@ export default function Home() {
             </div>
           </div>
           <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-muted-foreground">
-            <p>© 2026 Voice2Learn Proof. Built by Metaschool AI on Polygon Amoy Testnet.</p>
+            <p>© 2026 Dial A Tutor. Built by Metaschool AI on Polygon Amoy Testnet.</p>
             <div className="flex gap-8">
               <Link href="/privacy" className="hover:text-foreground">Privacy Policy</Link>
               <Link href="/terms" className="hover:text-foreground">Terms of Service</Link>

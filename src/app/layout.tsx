@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Voice2Learn Proof | Immutable Proof of Learning',
+  title: 'Dial A Tutor | Immutable Proof of Learning',
   description: 'A high-fidelity prototype for oral lessons with blockchain-backed proofs.',
 };
 

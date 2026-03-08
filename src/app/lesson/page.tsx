@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -194,7 +193,7 @@ export default function LessonPage() {
       <main className="container mx-auto px-4 py-12 max-w-2xl">
         <div className="mb-8 flex items-center justify-between">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold font-headline">Dial-a-Lesson</h1>
+            <h1 className="text-3xl font-bold font-headline">Dial A Tutor</h1>
             <p className="text-muted-foreground">Personalized AI Oral Instruction</p>
           </div>
           <Badge variant="outline" className="bg-white px-3 py-1 font-mono uppercase">

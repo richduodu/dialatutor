@@ -15,7 +15,7 @@ export function Navbar() {
 
   const links = [
     { href: "/", label: "Home", icon: ShieldCheck },
-    { href: "/lesson", label: "Dial-a-Lesson", icon: Phone },
+    { href: "/lesson", label: "Dial A Tutor", icon: Phone },
     { href: "/my-progress", label: "My Progress", icon: User },
     { href: "/dashboard", label: "Impact Verifier", icon: BarChart3 },
   ]
@@ -28,7 +28,7 @@ export function Navbar() {
             <div className="rounded-lg bg-primary p-1.5 text-primary-foreground">
               <BookOpen className="h-6 w-6" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-primary">Voice2Learn</span>
+            <span className="text-xl font-bold tracking-tight text-primary">Dial A Tutor</span>
           </Link>
         </div>
         <div className="flex items-center gap-4 md:gap-6">

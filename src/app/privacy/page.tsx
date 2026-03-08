@@ -21,7 +21,7 @@ export default function PrivacyPolicy() {
               <h2 className="text-2xl font-bold font-headline">Introduction</h2>
             </div>
             <p className="text-muted-foreground leading-relaxed">
-              At Voice2Learn Proof, we are committed to protecting your privacy. This policy explains how we collect, use, and safeguard your personal information as you interact with our voice-first educational platform and blockchain-backed verification services.
+              At Dial A Tutor, we are committed to protecting your privacy. This policy explains how we collect, use, and safeguard your personal information as you interact with our voice-first educational platform and blockchain-backed verification services.
             </p>
           </section>
 

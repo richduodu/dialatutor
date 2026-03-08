@@ -11,7 +11,7 @@ export default function ApiDocsPage() {
       <main className="container mx-auto px-4 py-16 max-w-4xl">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-black font-headline mb-4">Partner API Documentation</h1>
-          <p className="text-muted-foreground text-lg">Integrating Voice2Learn Proof into your educational ecosystem.</p>
+          <p className="text-muted-foreground text-lg">Integrating Dial A Tutor into your educational ecosystem.</p>
         </div>
 
         <div className="grid gap-8">

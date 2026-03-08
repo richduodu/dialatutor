@@ -21,7 +21,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-bold font-headline">Acceptance of Terms</h2>
             </div>
             <p className="text-muted-foreground leading-relaxed">
-              By accessing or using Voice2Learn Proof, you agree to be bound by these Terms of Service. If you do not agree to all of these terms, do not use our services. Our platform provides AI-driven oral education and blockchain-verified credentials.
+              By accessing or using Dial A Tutor, you agree to be bound by these Terms of Service. If you do not agree to all of these terms, do not use our services. Our platform provides AI-driven oral education and blockchain-verified credentials.
             </p>
           </section>
 
@@ -48,7 +48,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-bold font-headline">Intellectual Property</h2>
             </div>
             <p className="text-muted-foreground leading-relaxed">
-              The AI models, curriculum design, and software infrastructure are the property of Metaschool AI. Students retain ownership of their individual learning records, while Voice2Learn Proof is granted a license to process this data for educational and verification purposes.
+              The AI models, curriculum design, and software infrastructure are the property of Metaschool AI. Students retain ownership of their individual learning records, while Dial A Tutor is granted a license to process this data for educational and verification purposes.
             </p>
           </section>
 
@@ -69,7 +69,7 @@ export default function TermsOfService() {
           <section className="space-y-4">
             <h2 className="text-2xl font-bold font-headline">Limitation of Liability</h2>
             <p className="text-muted-foreground leading-relaxed">
-              In no event shall Voice2Learn Proof or Metaschool AI be liable for any indirect, incidental, or consequential damages arising out of your use of the platform.
+              In no event shall Dial A Tutor or Metaschool AI be liable for any indirect, incidental, or consequential damages arising out of your use of the platform.
             </p>
           </section>
         </div>

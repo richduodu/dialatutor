@@ -21,7 +21,7 @@ export default function AuditPage() {
               <h2 className="text-2xl font-bold font-headline">Verification Standards</h2>
             </div>
             <p className="text-muted-foreground leading-relaxed">
-              Voice2Learn Proof is built on the principle of "Verify, Don't Trust." Our smart contracts and AI evaluation logic are designed to be transparent and auditable by third-party organizations, government bodies, and impact funders.
+              Dial A Tutor is built on the principle of "Verify, Don't Trust." Our smart contracts and AI evaluation logic are designed to be transparent and auditable by third-party organizations, government bodies, and impact funders.
             </p>
           </section>
 
