@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -8,10 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Smartphone, LogIn, UserPlus, Loader2, User, Globe, AlertCircle } from "lucide-react"
+import { Smartphone, LogIn, UserPlus, Loader2, User, Lock } from "lucide-react"
 import { useAuth, useUser, useFirestore } from "@/firebase"
-import { signInAnonymously, signOut } from "firebase/auth"
-import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore"
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
+import { doc, setDoc, getDoc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 
 import 'react-phone-number-input/style.css'
@@ -20,6 +21,7 @@ import PhoneInput from 'react-phone-number-input'
 export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [phoneNumber, setPhoneNumber] = useState<string | undefined>("")
+  const [pin, setPin] = useState("")
   const [fullName, setFullName] = useState("")
   const [grade, setGrade] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -38,12 +40,9 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router, isSubmitting])
 
-  const checkUserExists = async (phone: string) => {
-    if (!db) return null
-    const studentsRef = collection(db, "students")
-    const q = query(studentsRef, where("phoneNumber", "==", phone))
-    const querySnapshot = await getDocs(q)
-    return !querySnapshot.empty
+  const getEmailFromPhone = (phone: string) => {
+    const cleanPhone = phone.replace(/\+/g, '')
+    return `${cleanPhone}@dialatutor.com`
   }
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -58,51 +57,41 @@ export default function LoginPage() {
       return
     }
 
+    if (pin.length < 4) {
+      toast({
+        title: "PIN Too Short",
+        description: "Your security PIN must be at least 4 digits.",
+        variant: "destructive"
+      })
+      return
+    }
+
     setIsSubmitting(true)
+    const email = getEmailFromPhone(phoneNumber)
     
     try {
-      const userCredential = await signInAnonymously(auth)
-      const newUser = userCredential.user
+      if (mode === 'register') {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, pin)
+        const newUser = userCredential.user
 
-      const exists = await checkUserExists(phoneNumber)
-
-      if (mode === 'login' && !exists) {
-        toast({
-          title: "Account Not Found",
-          description: "This phone number isn't registered. Please create an account first.",
-          variant: "destructive"
-        })
-        setMode('register')
-        setIsSubmitting(false)
-        return
-      }
-
-      if (mode === 'register' && exists) {
-        toast({
-          title: "Account Already Exists",
-          description: "This phone number is already registered. Please login instead.",
-        })
-        setMode('login')
-        setIsSubmitting(false)
-        return
-      }
-
-      if (mode === 'register' && db) {
-        const studentRef = doc(db, 'students', newUser.uid)
-        await setDoc(studentRef, {
-          id: newUser.uid,
-          externalAuthId: newUser.uid,
-          phoneNumber: phoneNumber,
-          name: fullName,
-          gradeLevel: grade,
-          createdAt: new Date().toISOString()
-        }, { merge: true })
+        if (db) {
+          const studentRef = doc(db, 'students', newUser.uid)
+          await setDoc(studentRef, {
+            id: newUser.uid,
+            externalAuthId: newUser.uid,
+            phoneNumber: phoneNumber,
+            name: fullName,
+            gradeLevel: grade,
+            createdAt: new Date().toISOString()
+          }, { merge: true })
+        }
         
         toast({
           title: "Account Created!",
           description: `Welcome to Dial A Tutor, ${fullName}.`,
         })
       } else {
+        await signInWithEmailAndPassword(auth, email, pin)
         toast({
           title: "Logged In",
           description: "Resuming your learning journey.",
@@ -112,9 +101,19 @@ export default function LoginPage() {
       router.push("/lesson")
     } catch (error: any) {
       console.error("Auth error:", error)
+      let message = "Please check your credentials and try again."
+      
+      if (error.code === 'auth/user-not-found') {
+        message = "No account found with this phone number. Please register."
+      } else if (error.code === 'auth/wrong-password') {
+        message = "Incorrect PIN. Please try again."
+      } else if (error.code === 'auth/email-already-in-use') {
+        message = "This phone number is already registered. Please login."
+      }
+
       toast({
-        title: "Authentication Failed",
-        description: error.message || "Please try again later.",
+        title: "Access Denied",
+        description: message,
         variant: "destructive"
       })
     } finally {
@@ -142,7 +141,7 @@ export default function LoginPage() {
             </CardTitle>
             <CardDescription>
               {mode === 'login' 
-                ? 'Enter your phone number to continue your learning journey.' 
+                ? 'Enter your phone and PIN to continue your learning journey.' 
                 : 'Join Dial A Tutor and start earning blockchain-backed proofs.'}
             </CardDescription>
           </CardHeader>
@@ -175,6 +174,23 @@ export default function LoginPage() {
                     defaultCountry="GH"
                     disabled={isSubmitting}
                     className="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pin">Security PIN</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    id="pin" 
+                    type="password"
+                    inputMode="numeric"
+                    placeholder="4-digit PIN" 
+                    className="pl-10 h-11 rounded-xl"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    required
                   />
                 </div>
               </div>
@@ -214,13 +230,16 @@ export default function LoginPage() {
               <Button 
                 variant="outline" 
                 className="w-full gap-2 rounded-full h-12" 
-                onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+                onClick={() => {
+                  setMode(mode === 'login' ? 'register' : 'login')
+                  setPin("")
+                }}
                 disabled={isSubmitting}
               >
                 {mode === 'login' ? (
-                  <><UserPlus className="h-4 w-4" /> Register Account</>
+                  <><UserPlus className="h-4 w-4" /> Create New Account</>
                 ) : (
-                  <><LogIn className="h-4 w-4" /> Switch to Login</>
+                  <><LogIn className="h-4 w-4" /> Already Registered? Login</>
                 )}
               </Button>
             </div>
