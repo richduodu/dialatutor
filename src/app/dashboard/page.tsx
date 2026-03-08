@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -17,6 +17,10 @@ export default function FunderDashboard() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
   const router = useRouter()
+  
+  // State for search and pagination
+  const [searchTerm, setSearchTerm] = useState("")
+  const [displayLimit, setDisplayLimit] = useState(20)
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -29,11 +33,28 @@ export default function FunderDashboard() {
     return query(
       collection(db, 'proofsOfLearning_public'),
       orderBy('mintingDate', 'desc'),
-      limit(20)
+      limit(displayLimit)
     )
-  }, [db])
+  }, [db, displayLimit])
 
   const { data: proofs, isLoading: isProofsLoading } = useCollection(publicProofsQuery)
+
+  // Client-side filtering for search functionality
+  const filteredProofs = useMemo(() => {
+    if (!proofs) return []
+    if (!searchTerm.trim()) return proofs
+    
+    const term = searchTerm.toLowerCase()
+    return proofs.filter(proof => 
+      proof.studentId.toLowerCase().includes(term) || 
+      proof.transactionHash.toLowerCase().includes(term) ||
+      (proof.lessonTitle || "").toLowerCase().includes(term)
+    )
+  }, [proofs, searchTerm])
+
+  const handleLoadMore = () => {
+    setDisplayLimit(prev => prev + 20)
+  }
 
   if (isUserLoading) {
     return (
@@ -121,7 +142,12 @@ export default function FunderDashboard() {
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search students or hashes..." className="pl-9 w-64 bg-muted/50 border-none h-10" />
+                <Input 
+                  placeholder="Search students or hashes..." 
+                  className="pl-9 w-64 bg-muted/50 border-none h-10"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
               <Button variant="outline" size="icon">
                 <Filter className="h-4 w-4" />
@@ -129,7 +155,7 @@ export default function FunderDashboard() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {isProofsLoading ? (
+            {isProofsLoading && !proofs ? (
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
@@ -146,7 +172,7 @@ export default function FunderDashboard() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {proofs?.map((row) => (
+                  {filteredProofs.map((row) => (
                     <TableRow key={row.id} className="hover:bg-muted/10 transition-colors">
                       <TableCell className="font-medium flex items-center gap-2 py-4">
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -177,10 +203,10 @@ export default function FunderDashboard() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {(!proofs || proofs.length === 0) && (
+                  {filteredProofs.length === 0 && !isProofsLoading && (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-20 text-muted-foreground">
-                        No learning transactions recorded yet.
+                        {searchTerm ? "No records match your search." : "No learning transactions recorded yet."}
                       </TableCell>
                     </TableRow>
                   )}
@@ -188,9 +214,21 @@ export default function FunderDashboard() {
               </Table>
             )}
           </CardContent>
-          <div className="p-4 border-t bg-muted/20 text-center">
-            <Button variant="link" className="text-sm font-bold">Load More Impact Records</Button>
-          </div>
+          {proofs && proofs.length >= displayLimit && (
+            <div className="p-4 border-t bg-muted/20 text-center">
+              <Button 
+                variant="link" 
+                className="text-sm font-bold"
+                onClick={handleLoadMore}
+                disabled={isProofsLoading}
+              >
+                {isProofsLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Load More Impact Records
+              </Button>
+            </div>
+          )}
         </Card>
       </main>
     </div>
