@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -179,7 +178,7 @@ export default function LoginPage() {
                     placeholder="Enter phone number"
                     value={phoneNumber}
                     onChange={setPhoneNumber}
-                    defaultCountry="US"
+                    defaultCountry="GH"
                     disabled={isSubmitting}
                     className="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   />
