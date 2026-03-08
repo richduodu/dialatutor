@@ -174,7 +174,7 @@ export default function Home() {
                 <Button size="lg" className="rounded-full bg-white text-slate-900 hover:bg-slate-100 font-bold h-14 px-10" asChild>
                   <Link href="/lesson">Get Started Now</Link>
                 </Button>
-                <Button size="lg" variant="outline" className="rounded-full border-white/20 text-white hover:bg-white/10 font-bold h-14 px-10" asChild>
+                <Button size="lg" variant="outline" className="rounded-full border-white/20 text-black hover:bg-white/10 font-bold h-14 px-10" asChild>
                   <Link href="/dashboard">View Live Ledger</Link>
                 </Button>
               </div>
