@@ -216,7 +216,7 @@ export default function Home() {
             </div>
           </div>
           <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-muted-foreground">
-            <p>© 2024 Voice2Learn Proof. Built for DialATutor on Polygon Amoy Testnet.</p>
+            <p>© 2026 Voice2Learn Proof. Built for DialATutor on Polygon Amoy Testnet.</p>
             <div className="flex gap-8">
               <Link href="#" className="hover:text-foreground">Privacy Policy</Link>
               <Link href="#" className="hover:text-foreground">Terms of Service</Link>
