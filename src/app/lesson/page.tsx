@@ -143,12 +143,12 @@ export default function LessonPage() {
           lessonId: lesson.id,
           lessonTitle: lesson.title,
           grade: evaluation.score,
-          blockchainNetwork: 'Polygon PoS',
+          blockchainNetwork: 'Polygon Amoy Testnet',
           contractAddress: '0x89542654019213892301923019230192301e921',
           tokenId: Math.floor(Math.random() * 1000000).toString(),
           transactionHash: generatedTxHash,
           mintingDate: new Date().toISOString(),
-          blockExplorerUrl: `https://polygonscan.com/tx/${generatedTxHash}`
+          blockExplorerUrl: `https://amoy.polygonscan.com/tx/${generatedTxHash}`
         }
         setDocumentNonBlocking(doc(db, 'students', studentId, 'proofsOfLearning', proofId), proofData, { merge: true })
         setDocumentNonBlocking(doc(db, 'proofsOfLearning_public', proofId), proofData, { merge: true })
@@ -316,7 +316,7 @@ export default function LessonPage() {
             </div>
             <div className="space-y-2">
               <h2 className="text-3xl font-bold font-headline">Minting Proof of Learning</h2>
-              <p className="text-muted-foreground">Securing your achievement on the Polygon PoS Mainnet.</p>
+              <p className="text-muted-foreground">Securing your achievement on the Polygon Amoy Testnet.</p>
             </div>
             <div className="max-w-xs mx-auto">
               <Progress value={66} className="h-2" />
@@ -345,20 +345,20 @@ export default function LessonPage() {
                         <Database className="h-4 w-4 text-primary" />
                         <p className="text-[10px] font-bold uppercase text-muted-foreground">Blockchain Transaction Proof</p>
                       </div>
-                      <Badge variant="secondary" className="text-[8px] h-4 bg-primary/10 text-primary border-none">SIMULATED PROOF</Badge>
+                      <Badge variant="secondary" className="text-[8px] h-4 bg-primary/10 text-primary border-none">AMOY TESTNET</Badge>
                     </div>
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">Network</span>
-                        <Badge variant="outline" className="text-[10px] font-mono">POLYGON POS</Badge>
+                        <Badge variant="outline" className="text-[10px] font-mono">POLYGON AMOY</Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">Hash</span>
                         <span className="font-mono text-[10px] truncate max-w-[120px]">{txHash}</span>
                       </div>
                       <Button className="w-full mt-2 gap-2 rounded-xl h-10 text-xs font-bold" variant="outline" asChild>
-                        <a href={`https://polygonscan.com/tx/${txHash}`} target="_blank" rel="noopener noreferrer">
-                          Verify on PolygonScan <ExternalLink className="h-3 w-3" />
+                        <a href={`https://amoy.polygonscan.com/tx/${txHash}`} target="_blank" rel="noopener noreferrer">
+                          Verify on AmoyScan <ExternalLink className="h-3 w-3" />
                         </a>
                       </Button>
                     </div>

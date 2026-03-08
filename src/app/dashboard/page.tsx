@@ -69,14 +69,14 @@ export default function FunderDashboard() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-1">
               <h1 className="text-4xl font-extrabold tracking-tight font-headline">Public Impact Ledger</h1>
-              <p className="text-muted-foreground text-lg">Real-time learning outcomes verified on Polygon PoS.</p>
+              <p className="text-muted-foreground text-lg">Real-time learning outcomes verified on Polygon Amoy Testnet.</p>
             </div>
             <div className="flex items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border">
               <div className="flex items-center gap-2 pr-4 border-r">
                 <Globe className="h-5 w-5 text-primary" />
                 <div>
                   <p className="text-[10px] font-bold uppercase text-muted-foreground">Network</p>
-                  <p className="text-sm font-bold">Polygon PoS</p>
+                  <p className="text-sm font-bold">Polygon Amoy</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 pl-4">
@@ -93,7 +93,7 @@ export default function FunderDashboard() {
         <Alert className="mb-12 bg-primary/5 border-primary/20 rounded-2xl">
           <Info className="h-4 w-4 text-primary" />
           <AlertDescription className="text-xs text-primary/80 font-medium">
-            <strong>Prototype Notice:</strong> Transaction hashes shown here are unique simulations for this high-fidelity demonstration. In production, these link to immutable mainnet records.
+            <strong>Testnet Notice:</strong> This dashboard displays transactions simulated on the Polygon Amoy Testnet environment for impact auditing demonstration.
           </AlertDescription>
         </Alert>
 
@@ -193,7 +193,7 @@ export default function FunderDashboard() {
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm" className="gap-1 h-8 text-[10px] font-bold border-primary text-primary hover:bg-primary hover:text-white" asChild>
-                          <a href={`https://polygonscan.com/tx/${row.transactionHash}`} target="_blank" rel="noopener noreferrer">
+                          <a href={`https://amoy.polygonscan.com/tx/${row.transactionHash}`} target="_blank" rel="noopener noreferrer">
                             Verify <ExternalLink className="h-3 w-3" />
                           </a>
                         </Button>

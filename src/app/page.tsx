@@ -1,3 +1,4 @@
+
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,7 +19,7 @@ export default function Home() {
               <span className="text-primary font-headline">Verification is Immutable.</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-              Complete oral lessons via voice interaction. Receive a gasless, tamper-proof Proof of Learning token on the Polygon blockchain. No smartphone needed.
+              Complete oral lessons via voice interaction. Receive a gasless, tamper-proof Proof of Learning token on the Polygon Amoy Testnet. No smartphone needed.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="rounded-full px-8 gap-2 bg-primary hover:bg-primary/90" asChild>
@@ -73,7 +74,7 @@ export default function Home() {
                   <CardTitle className="font-headline">Blockchain Proofs</CardTitle>
                 </CardHeader>
                 <CardContent className="text-muted-foreground leading-relaxed">
-                  Successful completion triggers an automatic gasless mint of a Soulbound Token on Polygon, verifiable by funders globally.
+                  Successful completion triggers an automatic gasless record on the Polygon Amoy Testnet, verifiable by funders globally.
                 </CardContent>
               </Card>
             </div>
@@ -88,14 +89,14 @@ export default function Home() {
               <div className="flex-1">
                 <h3 className="text-2xl font-bold mb-4">Real-Time Impact Tracking</h3>
                 <p className="opacity-90 mb-6">
-                  Every lesson completed is a transaction on the Polygon network. Funders like UNICEF can audit educational impact with 100% transparency and zero overhead.
+                  Every lesson completed is recorded on the Polygon Amoy network. Funders like UNICEF can audit educational impact with 100% transparency and zero overhead.
                 </p>
                 <Button variant="secondary" className="gap-2" asChild>
                   <Link href="/dashboard">Access Dashboard <ArrowRight className="h-4 w-4" /></Link>
                 </Button>
               </div>
               <div className="w-full md:w-1/3 aspect-video bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/20">
-                <span className="text-sm font-mono opacity-80">0x Polygon Explorer</span>
+                <span className="text-sm font-mono opacity-80">Amoy Testnet Explorer</span>
               </div>
             </div>
           </div>

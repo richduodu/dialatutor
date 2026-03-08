@@ -132,10 +132,10 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ attemp
                     <ShieldCheck className="h-6 w-6" />
                     <h2 className="text-xl font-bold font-headline">Blockchain Confirmation</h2>
                   </div>
-                  <Badge variant="secondary" className="bg-white/20 text-white border-none text-[8px] h-4">SIMULATED PROOF</Badge>
+                  <Badge variant="secondary" className="bg-white/20 text-white border-none text-[8px] h-4">AMOY TESTNET</Badge>
                 </div>
                 <p className="opacity-90 max-w-md">
-                  This record is secured on the <strong>Polygon PoS</strong> blockchain. It is publicly verifiable, immutable, and tamper-proof.
+                  This record is secured on the <strong>Polygon Amoy</strong> testnet. It is publicly verifiable, immutable, and tamper-proof.
                 </p>
                 
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -146,8 +146,8 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ attemp
                   <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20">
                     <p className="text-[10px] font-bold uppercase opacity-60 mb-1">Verification Link</p>
                     <Button variant="secondary" size="sm" className="w-full h-8 rounded-xl gap-2 text-xs font-bold" asChild>
-                      <a href={`https://polygonscan.com/`} target="_blank" rel="noopener noreferrer">
-                        PolygonScan <ExternalLink className="h-3 w-3" />
+                      <a href={`https://amoy.polygonscan.com/`} target="_blank" rel="noopener noreferrer">
+                        AmoyScan <ExternalLink className="h-3 w-3" />
                       </a>
                     </Button>
                   </div>
