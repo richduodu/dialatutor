@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, Search, Globe, Loader2, Database, Info } from "lucide-react"
+import { ExternalLink, Search, Globe, Loader2, Database, Info, ShieldAlert } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, limit } from "firebase/firestore"
@@ -22,6 +22,7 @@ export default function FunderDashboard() {
   const [searchTerm, setSearchTerm] = useState("")
   const [displayLimit, setDisplayLimit] = useState(20)
 
+  // Strict routing check: Redirect to login if not authenticated
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push("/login")
@@ -29,13 +30,13 @@ export default function FunderDashboard() {
   }, [user, isUserLoading, router])
 
   const publicProofsQuery = useMemoFirebase(() => {
-    if (!db) return null
+    if (!db || !user) return null
     return query(
       collection(db, 'proofsOfLearning_public'),
       orderBy('mintingDate', 'desc'),
       limit(displayLimit)
     )
-  }, [db, displayLimit])
+  }, [db, user, displayLimit])
 
   const { data: proofs, isLoading: isProofsLoading } = useCollection(publicProofsQuery)
 
@@ -45,17 +46,38 @@ export default function FunderDashboard() {
     
     const term = searchTerm.toLowerCase()
     return proofs.filter(proof => 
-      proof.studentId.toLowerCase().includes(term) || 
-      proof.transactionHash.toLowerCase().includes(term) ||
+      (proof.studentId || "").toLowerCase().includes(term) || 
+      (proof.transactionHash || "").toLowerCase().includes(term) ||
       (proof.lessonTitle || "").toLowerCase().includes(term)
     )
   }, [proofs, searchTerm])
 
+  // Gate the dashboard content while authorizing
   if (isUserLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-background items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 font-bold text-muted-foreground">Authorizing...</p>
+        <p className="mt-4 font-bold text-muted-foreground">Authorizing Access...</p>
+      </div>
+    )
+  }
+
+  // Final gate: If user is not present (e.g. during redirect), show restricted notice
+  if (!user) {
+    return (
+      <div className="flex flex-col min-h-screen bg-background items-center justify-center p-4">
+        <Card className="w-full max-w-md border-none shadow-2xl">
+          <CardHeader className="text-center">
+            <ShieldAlert className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <CardTitle className="text-2xl font-black">Restricted Access</CardTitle>
+            <CardDescription>You must be a registered partner or coordinator to view the impact ledger.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button className="w-full rounded-full h-12 shadow-lg" onClick={() => router.push("/login")}>
+              Sign In to Verify
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
