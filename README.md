@@ -7,22 +7,22 @@ Dial A Tutor is a voice-first educational platform designed to bridge the digita
 
 - **Voice-First Interaction:** Simulated IVR (Interactive Voice Response) system using AI for oral lesson delivery and evaluation.
 - **AI-Powered Tutoring:** Leverages Google Gemini (via Genkit) to generate dynamic lessons and evaluate student responses with strict academic guardrails.
-- **Offline Mode:** A special toggle in the Lesson interface that mocks AI responses, allowing for seamless demonstrations even without internet connectivity or API access.
+- **Offline Mode:** A special toggle in the Lesson interface that mocks AI responses and queues blockchain writes locally using Firestore persistence, allowing for demonstrations even without active internet.
 - **Blockchain Verification:** Automatically mints "Proof of Learning" tokens on the Polygon Amoy Testnet for every successful lesson completion.
 - **Impact Verifier Dashboard:** A public ledger for funders and NGOs to audit educational outcomes in real-time.
 - **Universal Accessibility:** Designed to be accessible via simple mobile phones (simulated through the web interface).
 
-## Connection & SMS Architecture (Simulation Status)
+## Backend & SMS Architecture
 
-The student interaction model is designed to be "asynchronous-first" to handle spotty connectivity. **Note: The SMS/Twilio integration is currently a UI-driven simulation.**
+The student interaction model is designed to be "asynchronous-first" to handle spotty connectivity.
 
-1. **Phone-Based Identity:** Students authenticate using their phone numbers. This number serves as the routing address for academic feedback.
-2. **IVR Simulation:** The web interface simulates an IVR (Interactive Voice Response) call where the AI "speaks" the lesson and the student "speaks" back.
-3. **SMS Feedback Loop (Simulated):** 
-    - Upon lesson completion, a `StudentReport` is generated in Firestore.
-    - **Production Requirement:** A server-side Firebase Cloud Function would detect this report and dispatch an automated SMS via a provider like Twilio.
-    - **Current State:** The UI provides a visual confirmation of the SMS trigger for demonstration purposes.
-4. **Offline Synchronization:** If a student is in a zero-connectivity area, the achievement is cached locally. Once the device syncs, the backend trigger would be activated automatically.
+1. **Phone-Based Identity:** Students authenticate using their phone numbers.
+2. **IVR Simulation:** The web interface simulates an IVR call where the AI "speaks" the lesson and the student "speaks" back.
+3. **Backend Notifications (Server Actions):** 
+    - Upon lesson completion, a `notifyStudentFlow` (Genkit Flow) is triggered on the server.
+    - This backend action acts as the equivalent of a Firebase Cloud Function, handling the logic for dispatching an automated SMS.
+    - **Current State:** The dispatch logic is implemented as a server-side action with simulated Twilio integration for demonstration purposes.
+4. **Offline Synchronization:** Achievements are cached locally via Firestore. Once the device syncs with the cloud, the backend trigger is activated automatically.
 
 ## Tech Stack
 
@@ -32,12 +32,6 @@ The student interaction model is designed to be "asynchronous-first" to handle s
 - **Authentication:** [Firebase Authentication](https://firebase.google.com/products/auth) (Anonymous & Phone simulation)
 - **AI/LLM:** [Genkit](https://firebase.google.com/docs/genkit) with Google Gemini 2.0 Flash
 - **Deployment:** [Firebase App Hosting](https://firebase.google.com/products/app-hosting)
-
-## Prerequisites
-
-- [Node.js](https://nodejs.org/) (Latest LTS recommended)
-- [Firebase Account](https://console.firebase.google.com/)
-- [Google Cloud Project](https://console.cloud.google.com/) with Gemini API access enabled.
 
 ## Local Development
 
@@ -68,26 +62,17 @@ The student interaction model is designed to be "asynchronous-first" to handle s
 
 ### 1. Firebase Setup
 - Go to the [Firebase Console](https://console.firebase.google.com/).
-- Create a new project or select an existing one.
-- **Enable Authentication:** Activate the "Anonymous" sign-in provider.
-- **Enable Firestore:** Create a database in "Production" or "Test" mode.
-- **Deploy Security Rules:** Copy the rules from `firestore.rules` and publish them in the Firebase Console.
+- Create a new project.
+- **Enable Authentication:** Activate "Anonymous" sign-in.
+- **Enable Firestore:** Create a database.
 
-### 2. Genkit/Gemini API
-- Ensure you have a valid API Key from [Google AI Studio](https://a Studio.google.com/).
-- In the Firebase Console, go to **Project Settings > Cloud Messaging** or use the Google Cloud Console to ensure the Gemini API is enabled for your project.
-
-### 3. Deploy via Firebase App Hosting
+### 2. Deploy via Firebase App Hosting
 Firebase App Hosting is the recommended way to deploy this Next.js 15 application.
 
-1.  **Connect your GitHub Repository:** In the Firebase Console, navigate to **App Hosting** and connect your repository.
-2.  **Configure Environment Variables:** During the setup, add `GOOGLE_GENAI_API_KEY` as a secret or environment variable.
-3.  **Deploy:** Firebase will automatically detect the Next.js build and deploy your application.
-
-## License
-
-Built by Metaschool AI. This project is for educational purposes.
+1. **Connect your GitHub Repository:** In the Firebase Console, navigate to **App Hosting** and connect your repo.
+2. **Configure Environment Variables:** Add `GOOGLE_GENAI_API_KEY` as a secret.
+3. **Deploy:** Firebase will automatically detect the Next.js build and deploy your application.
 
 ---
 
-© 2026 Dial A Tutor. All rights reserved.
+© 2026 Dial A Tutor. Built by Metaschool AI.

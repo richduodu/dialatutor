@@ -17,6 +17,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { generateLesson } from "@/ai/flows/generate-lesson-flow"
+import { notifyStudent } from "@/ai/flows/notify-student-flow"
 import { useToast } from "@/hooks/use-toast"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -30,7 +31,7 @@ export default function LessonPage() {
   const [subject, setSubject] = useState<string>("")
   const [gradeLevel, setGradeLevel] = useState<string>("")
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isDemoMode, setIsDemoMode] = useState(false)
+  const [isOfflineMode, setIsOfflineMode] = useState(false)
   const [mintingStatus, setMintingStatus] = useState<'idle' | 'minting' | 'completed'>('idle')
   const [txHash, setTxHash] = useState<string>("")
   const [lesson, setLesson] = useState<{ id: string, title: string, content: string, expectedAnswer: string } | null>(null)
@@ -89,8 +90,7 @@ export default function LessonPage() {
         }, { merge: true })
       }
 
-      if (isDemoMode) {
-        // Simulate local generation delay
+      if (isOfflineMode) {
         await new Promise(r => setTimeout(r, 1500))
         setLesson({
           id: crypto.randomUUID(),
@@ -122,12 +122,13 @@ export default function LessonPage() {
     }
   }
 
-  const handleEvaluationComplete = (evaluation: any) => {
+  const handleEvaluationComplete = async (evaluation: any) => {
     if (!user || !lesson) return
 
     const studentId = user.uid
     const attemptId = crypto.randomUUID()
     
+    // 1. Save results to Firestore
     const attemptRef = doc(db, 'students', studentId, 'lessonAttempts', attemptId)
     setDocumentNonBlocking(attemptRef, {
       id: attemptId,
@@ -141,10 +142,20 @@ export default function LessonPage() {
       aiEvaluationResult: evaluation.evaluation,
       grade: evaluation.score,
       isCompleted: evaluation.isCorrect,
-      isOfflineDemo: isDemoMode
+      isOfflineMode: isOfflineMode
     }, { merge: true })
 
     if (evaluation.isCorrect) {
+      // 2. Trigger Backend Notification (Server Action)
+      if (!isOfflineMode) {
+        notifyStudent({
+          phoneNumber: studentProfile?.phoneNumber || "Simulated Phone",
+          lessonTitle: lesson.title,
+          score: evaluation.score
+        }).catch(err => console.error("Notification Flow failed:", err));
+      }
+
+      // 3. UI Transition to Minting
       setTimeout(() => {
         setStep(2)
         setMintingStatus('minting')
@@ -165,7 +176,7 @@ export default function LessonPage() {
           transactionHash: generatedTxHash,
           mintingDate: new Date().toISOString(),
           blockExplorerUrl: `https://amoy.polygonscan.com/tx/${generatedTxHash}`,
-          isOfflineDemo: isDemoMode
+          isOfflineMode: isOfflineMode
         }
         setDocumentNonBlocking(doc(db, 'students', studentId, 'proofsOfLearning', proofId), proofData, { merge: true })
         setDocumentNonBlocking(doc(db, 'proofsOfLearning_public', proofId), proofData, { merge: true })
@@ -178,7 +189,7 @@ export default function LessonPage() {
           reportContent: `Successfully completed: ${lesson.title}. Evaluation: ${evaluation.evaluation}`,
           lessonAttemptIds: [attemptId],
           overallGrade: evaluation.score,
-          sentViaSms: true,
+          sentViaSms: !isOfflineMode,
           sentDate: new Date().toISOString()
         }, { merge: true })
 
@@ -221,13 +232,13 @@ export default function LessonPage() {
             {step === 0 && (
               <div className="flex items-center space-x-2 bg-white/50 px-3 py-1.5 rounded-full border border-dashed">
                 <Label htmlFor="demo-mode" className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1 cursor-pointer">
-                  {isDemoMode ? <WifiOff className="h-3 w-3 text-orange-500" /> : <Wifi className="h-3 w-3 text-green-500" />}
+                  {isOfflineMode ? <WifiOff className="h-3 w-3 text-orange-500" /> : <Wifi className="h-3 w-3 text-green-500" />}
                   Offline Mode
                 </Label>
                 <Switch 
                   id="demo-mode" 
-                  checked={isDemoMode} 
-                  onCheckedChange={setIsDemoMode} 
+                  checked={isOfflineMode} 
+                  onCheckedChange={setIsOfflineMode} 
                   className="scale-75"
                 />
               </div>
@@ -290,7 +301,7 @@ export default function LessonPage() {
                   </>
                 )}
               </Button>
-              {isDemoMode && (
+              {isOfflineMode && (
                 <div className="flex items-center justify-center gap-2 mt-2">
                   <Badge variant="outline" className="text-[10px] bg-orange-50 text-orange-600 border-orange-200 uppercase px-3">
                     <WifiOff className="h-2 w-2 mr-1" /> Offline Mode Active
@@ -331,7 +342,7 @@ export default function LessonPage() {
                     <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-none">
                       {gradeLevel}
                     </Badge>
-                    {isDemoMode && (
+                    {isOfflineMode && (
                       <Badge variant="outline" className="text-[8px] border-white/40 text-white">OFFLINE MODE</Badge>
                     )}
                   </div>
@@ -349,7 +360,7 @@ export default function LessonPage() {
               lessonContent={lesson.content} 
               expectedAnswer={lesson.expectedAnswer} 
               onComplete={handleEvaluationComplete}
-              isDemoMode={isDemoMode}
+              isOfflineMode={isOfflineMode}
             />
           </div>
         )}
@@ -369,7 +380,7 @@ export default function LessonPage() {
             <div className="max-w-xs mx-auto">
               <Progress value={66} className="h-2" />
               <p className="text-[10px] uppercase font-bold mt-2 text-muted-foreground">
-                {isDemoMode ? "Queuing for background sync..." : "Transaction broadcasted..."}
+                {isOfflineMode ? "Queuing for background sync..." : "Transaction broadcasted..."}
               </p>
             </div>
           </div>
@@ -388,7 +399,7 @@ export default function LessonPage() {
                   Your response was verified and your Proof of Learning has been permanently recorded on the blockchain.
                 </p>
 
-                {isDemoMode && (
+                {isOfflineMode && (
                   <Card className="mb-6 bg-orange-50 border-orange-100 text-orange-800 text-left">
                     <CardContent className="p-4 flex gap-3 items-start">
                       <Info className="h-5 w-5 shrink-0 mt-0.5" />
@@ -432,18 +443,25 @@ export default function LessonPage() {
                         <Send className="h-4 w-4 text-primary" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold uppercase text-primary">SMS Confirmation Sent</p>
-                        <p className="text-sm text-muted-foreground leading-snug">"Congrats! You completed your {subject} lesson. Your immutable certificate is ready."</p>
+                        <p className="text-xs font-bold uppercase text-primary">SMS Confirmation Dispatched</p>
+                        <p className="text-sm text-muted-foreground leading-snug">
+                          {isOfflineMode 
+                            ? "Offline: SMS will be sent once signal is regained." 
+                            : `"Congrats! You completed your ${subject} lesson. Your immutable certificate is ready."`
+                          }
+                        </p>
                       </div>
                     </div>
                   </div>
 
-                  <Alert className="bg-muted/50 border-none">
-                    <Info className="h-4 w-4" />
-                    <AlertDescription className="text-[10px] italic text-muted-foreground">
-                      Note: SMS delivery is currently simulated for this demonstration. Production requires a Firebase Cloud Function for Twilio dispatch.
-                    </AlertDescription>
-                  </Alert>
+                  {!isOfflineMode && (
+                    <Alert className="bg-muted/50 border-none">
+                      <Info className="h-4 w-4" />
+                      <AlertDescription className="text-[10px] italic text-muted-foreground">
+                        Note: For this version, backend SMS dispatch is simulated via a Next.js Server Action. Production requires a live Twilio SID/Token.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
 
                 <div className="mt-10 flex flex-col gap-3">
