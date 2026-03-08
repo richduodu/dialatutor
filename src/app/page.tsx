@@ -37,7 +37,7 @@ export default function Home() {
                     Start Learning <Zap className="h-5 w-5 fill-current" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="rounded-full px-10 h-14 text-lg font-bold gap-2 border-primary/20 text-primary hover:bg-primary/5 transition-all hover:-translate-y-1" asChild>
+                <Button size="lg" variant="outline" className="rounded-full px-10 h-14 text-lg font-bold gap-2 border-primary/20 text-black hover:bg-primary/5 transition-all hover:-translate-y-1" asChild>
                   <Link href="/dashboard">
                     Impact Verifier <ShieldCheck className="h-5 w-5" />
                   </Link>
@@ -217,8 +217,8 @@ export default function Home() {
           <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-muted-foreground">
             <p>© 2026 Voice2Learn Proof. Built by Metaschool AI on Polygon Amoy Testnet.</p>
             <div className="flex gap-8">
-              <Link href="#" className="hover:text-foreground">Privacy Policy</Link>
-              <Link href="#" className="hover:text-foreground">Terms of Service</Link>
+              <Link href="/privacy" className="hover:text-foreground">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-foreground">Terms of Service</Link>
             </div>
           </div>
         </div>
