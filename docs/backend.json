@@ -85,11 +85,19 @@
         },
         "studentId": {
           "type": "string",
-          "description": "Reference to the Student who made this lesson attempt. (Relationship: Student 1:N LessonAttempt)"
+          "description": "Reference to the Student who made this lesson attempt."
         },
         "lessonId": {
           "type": "string",
-          "description": "Reference to the Lesson that was attempted. (Relationship: Lesson 1:N LessonAttempt)"
+          "description": "Reference to the Lesson that was attempted."
+        },
+        "lessonTitle": {
+          "type": "string",
+          "description": "The title of the lesson at the time of the attempt."
+        },
+        "subject": {
+          "type": "string",
+          "description": "The educational subject of the lesson."
         },
         "startTime": {
           "type": "string",
@@ -103,28 +111,28 @@
         },
         "rawAudioUri": {
           "type": "string",
-          "description": "URI pointing to the raw audio recording of the student's responses during this attempt.",
+          "description": "URI pointing to the raw audio recording of the student's responses.",
           "format": "uri"
         },
         "transcribedText": {
           "type": "string",
-          "description": "The text transcription of the student's oral responses from the IVR system."
+          "description": "The text transcription of the student's oral responses."
         },
         "aiEvaluationResult": {
           "type": "string",
-          "description": "Structured JSON or text detailing the AI's assessment and feedback on the student's performance."
+          "description": "Structured JSON or text detailing the AI's assessment."
         },
         "grade": {
           "type": "number",
-          "description": "The numerical grade received by the student for this specific lesson attempt."
+          "description": "The numerical grade received."
         },
         "isCompleted": {
           "type": "boolean",
-          "description": "Boolean flag indicating whether the lesson was successfully completed according to the AI's evaluation."
+          "description": "Flag indicating successful completion."
         },
         "proofOfLearningId": {
           "type": "string",
-          "description": "Optional reference to the ProofOfLearning token minted for this successful attempt. (Relationship: LessonAttempt 1:1 ProofOfLearning)"
+          "description": "Optional reference to the ProofOfLearning token."
         }
       },
       "required": [
@@ -142,7 +150,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "ProofOfLearning",
       "type": "object",
-      "description": "Represents an immutable Proof of Learning token minted on the blockchain for a successfully completed lesson attempt.",
+      "description": "Represents an immutable Proof of Learning token minted on the blockchain.",
       "properties": {
         "id": {
           "type": "string",
@@ -150,40 +158,40 @@
         },
         "lessonAttemptId": {
           "type": "string",
-          "description": "Reference to the LessonAttempt for which this proof was minted. (Relationship: ProofOfLearning 1:1 LessonAttempt)"
+          "description": "Reference to the LessonAttempt."
         },
         "studentId": {
           "type": "string",
-          "description": "Reference to the Student who earned this proof. (Relationship: Student 1:N ProofOfLearning)"
+          "description": "Reference to the Student."
         },
         "lessonId": {
           "type": "string",
-          "description": "Reference to the Lesson associated with this proof. (Relationship: Lesson 1:N ProofOfLearning)"
+          "description": "Reference to the Lesson."
         },
         "blockchainNetwork": {
           "type": "string",
-          "description": "The name of the blockchain network where the token was minted (e.g., 'Polygon PoS')."
+          "description": "The name of the blockchain network."
         },
         "contractAddress": {
           "type": "string",
-          "description": "The address of the smart contract that minted the token on the blockchain."
+          "description": "The address of the smart contract."
         },
         "tokenId": {
           "type": "string",
-          "description": "The unique identifier of the token within the smart contract on the blockchain."
+          "description": "The unique identifier of the token."
         },
         "transactionHash": {
           "type": "string",
-          "description": "The transaction hash of the minting operation on the blockchain."
+          "description": "The transaction hash."
         },
         "mintingDate": {
           "type": "string",
-          "description": "Timestamp when the token was successfully minted and recorded.",
+          "description": "Timestamp when the token was successfully minted.",
           "format": "date-time"
         },
         "blockExplorerUrl": {
           "type": "string",
-          "description": "URL to view the token transaction on a public block explorer.",
+          "description": "URL to view the token transaction.",
           "format": "uri"
         }
       },
@@ -204,7 +212,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "StudentReport",
       "type": "object",
-      "description": "A comprehensive report summarizing a student's learning progress, achievements, and grades over a specified period or set of lessons.",
+      "description": "A comprehensive report summarizing progress.",
       "properties": {
         "id": {
           "type": "string",
@@ -212,35 +220,35 @@
         },
         "studentId": {
           "type": "string",
-          "description": "Reference to the Student for whom this report was generated. (Relationship: Student 1:N StudentReport)"
+          "description": "Reference to the Student."
         },
         "generatedDate": {
           "type": "string",
-          "description": "Timestamp indicating when this student report was generated.",
+          "description": "Timestamp indicating when the report was generated.",
           "format": "date-time"
         },
         "reportContent": {
           "type": "string",
-          "description": "The textual or structured content of the report, summarizing progress and evaluations."
+          "description": "The textual or structured content of the report."
         },
         "lessonAttemptIds": {
           "type": "array",
-          "description": "An array of references to the LessonAttempts included in this report. (Relationship: StudentReport N:N LessonAttempt)",
+          "description": "References to the LessonAttempts included.",
           "items": {
             "type": "string"
           }
         },
         "overallGrade": {
           "type": "number",
-          "description": "An aggregated or overall grade for the student based on the contents of this report."
+          "description": "An aggregated grade."
         },
         "sentViaSms": {
           "type": "boolean",
-          "description": "Boolean flag indicating if this report was sent to the student via SMS."
+          "description": "Flag indicating if sent via SMS."
         },
         "sentDate": {
           "type": "string",
-          "description": "Timestamp indicating when the report was sent to the student, if applicable.",
+          "description": "Timestamp indicating when sent.",
           "format": "date-time"
         }
       },
@@ -269,11 +277,11 @@
           "schema": {
             "$ref": "#/backend/entities/Student"
           },
-          "description": "Stores individual student profiles. The document ID `{studentId}` MUST match the authenticated user's `request.auth.uid` for authorization. This document's `externalAuthId` field is also designed to match this ID.",
+          "description": "Stores individual student profiles.",
           "params": [
             {
               "name": "studentId",
-              "description": "The unique identifier of the student, corresponding to their external authentication ID (request.auth.uid)."
+              "description": "The unique identifier of the student."
             }
           ]
         }
@@ -285,7 +293,7 @@
           "schema": {
             "$ref": "#/backend/entities/Lesson"
           },
-          "description": "Stores all available educational lessons. These lessons are generally read-only and accessible by all authenticated students.",
+          "description": "Stores all available educational lessons.",
           "params": [
             {
               "name": "lessonId",
@@ -301,15 +309,15 @@
           "schema": {
             "$ref": "#/backend/entities/LessonAttempt"
           },
-          "description": "Records a student's specific attempt at a lesson. Includes denormalized `studentId` to ensure authorization independence. Access is restricted to the owning student based on `request.auth.uid` matching the `{studentId}` path segment.",
+          "description": "Records a student's specific attempt at a lesson.",
           "params": [
             {
               "name": "studentId",
-              "description": "The unique identifier of the student who made the attempt. Matches the parent 'students' collection ID."
+              "description": "The identifier of the student."
             },
             {
               "name": "lessonAttemptId",
-              "description": "The unique identifier for this specific lesson attempt."
+              "description": "The identifier for this attempt."
             }
           ]
         }
@@ -321,15 +329,15 @@
           "schema": {
             "$ref": "#/backend/entities/ProofOfLearning"
           },
-          "description": "Stores immutable Proof of Learning tokens earned by a specific student. Includes denormalized `studentId` for authorization independence. Accessible only by the owning student based on `request.auth.uid` matching the `{studentId}` path segment.",
+          "description": "Stores private Proof of Learning tokens.",
           "params": [
             {
               "name": "studentId",
-              "description": "The unique identifier of the student who earned this proof. Matches the parent 'students' collection ID."
+              "description": "The identifier of the student."
             },
             {
               "name": "proofId",
-              "description": "The unique identifier for this Proof of Learning token."
+              "description": "The identifier for this proof."
             }
           ]
         }
@@ -341,11 +349,11 @@
           "schema": {
             "$ref": "#/backend/entities/ProofOfLearning"
           },
-          "description": "A public, read-only collection of all minted Proofs of Learning. This collection denormalizes key verification fields (e.g., transaction hash, block explorer URL, studentId for context) from the student-owned proofs to allow efficient QAP-compliant listing and verification by funders or the public, without requiring access to individual student subcollections.",
+          "description": "A public, read-only collection of all minted Proofs.",
           "params": [
             {
               "name": "proofId",
-              "description": "The unique identifier for this Proof of Learning token, mirrored from the student-owned collection."
+              "description": "The unique identifier for this public proof record."
             }
           ]
         }
@@ -357,20 +365,20 @@
           "schema": {
             "$ref": "#/backend/entities/StudentReport"
           },
-          "description": "Stores comprehensive reports summarizing a student's learning progress and grades. Includes denormalized `studentId` for authorization independence. Accessible only by the owning student based on `request.auth.uid` matching the `{studentId}` path segment.",
+          "description": "Stores progress reports.",
           "params": [
             {
               "name": "studentId",
-              "description": "The unique identifier of the student for whom this report was generated. Matches the parent 'students' collection ID."
+              "description": "The identifier of the student."
             },
             {
               "name": "reportId",
-              "description": "The unique identifier for this student report."
+              "description": "The identifier for this report."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to enforce strict authorization and enable efficient querying, adhering to the core design principles. \n\n**Authorization Independence:** This is primarily achieved by establishing a clear, path-based ownership model for student-specific data. All student-owned data (LessonAttempts, ProofsOfLearning, StudentReports) are nested directly under `/students/{studentId}/`. For these subcollections, the `studentId` wildcard in the path directly corresponds to the authenticated user's `request.auth.uid`. Furthermore, relevant entities (LessonAttempt, ProofOfLearning, StudentReport) include a `studentId` field within their document data. This denormalization means that security rules can always check `request.auth.uid == studentId` (either from the path or the document field) without needing to perform a `get()` operation on a parent document. This ensures atomic write operations and simplifies rule logic considerably.\n\n**QAPs (Rules are not Filters):** The structure supports efficient and secure `list` operations:\n\n1.  **Student-Owned Data:** For collections like `/students/{studentId}/lessonAttempts`, `/students/{studentId}/proofsOfLearning`, and `/students/{studentId}/studentReports`, a student can perform a `list` operation to retrieve all their own records. The security rule `allow list: if request.auth.uid == studentId;` is QAP-compliant because the `studentId` in the path segment directly filters the data before the security rule is evaluated, ensuring only the authenticated user's data is queried.\n2.  **Public/Global Data:** The `/lessons` collection is designed to be read-only for all authenticated students, allowing them to `list` all available lessons. The `/proofsOfLearning_public` collection is created specifically to address the 'Funder Verification Dashboard' requirement. Funders need to view *all* minted proofs. By segregating these public proofs into their own top-level collection, a QAP-compliant `list` operation (`allow list: if request.auth != null;` or even `if true;` depending on public vs. authenticated-funder access) can be executed efficiently without needing to fan out queries across individual student subcollections or apply inefficient filters in rules. This denormalization allows student-specific data to remain private while simultaneously providing a global, verifiable view of achievements.\n\n**Structural Segregation:** Different security postures are handled by separate collections:\n\n*   `/students/{studentId}/...`: Private data, accessible only by the owning student.\n*   `/lessons`: Public (or authenticated-read-only) content, accessible by all students.\n*   `/proofsOfLearning_public`: Public-facing immutable blockchain records, accessible for verification by funders or the general public.\n\nThis separation simplifies security rules and ensures that documents within a collection share a homogeneous security profile. The consistent use of semantic wildcard names like `{studentId}` and `{lessonId}` enhances clarity and debuggability."
+    "reasoning": "Standard structure for secure, path-based ownership and public verification."
   }
 }

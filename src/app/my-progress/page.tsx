@@ -1,4 +1,3 @@
-
 "use client"
 
 import { Navbar } from "@/components/navbar"
@@ -10,6 +9,7 @@ import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebas
 import { collection, query, orderBy } from "firebase/firestore"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import Link from "next/link"
 
 export default function MyProgressPage() {
   const { user, isUserLoading } = useUser()
@@ -103,7 +103,7 @@ export default function MyProgressPage() {
               <p className="text-xl font-bold">No reports yet</p>
               <p className="text-muted-foreground mb-6">Complete your first lesson to see your evaluation.</p>
               <Button asChild className="rounded-full">
-                <a href="/lesson">Start Lesson #1</a>
+                <Link href="/lesson">Start Lesson #1</Link>
               </Button>
             </div>
           )}
@@ -120,8 +120,11 @@ export default function MyProgressPage() {
                       <BookOpen className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-lg">Multiplication Mastery</h3>
-                      <p className="text-sm text-muted-foreground italic">"{attempt.transcribedText}"</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Badge variant="outline" className="text-[10px] py-0">{attempt.subject || "General"}</Badge>
+                      </div>
+                      <h3 className="font-bold text-lg">{attempt.lessonTitle || "Module Completion"}</h3>
+                      <p className="text-sm text-muted-foreground italic line-clamp-1">"{attempt.transcribedText}"</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
@@ -139,6 +142,11 @@ export default function MyProgressPage() {
               </CardContent>
             </Card>
           ))}
+          {attempts?.length === 0 && (
+             <div className="text-center py-10 text-muted-foreground italic">
+                You haven't completed any lessons yet.
+             </div>
+          )}
         </div>
       </main>
     </div>
