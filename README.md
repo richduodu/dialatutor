@@ -12,14 +12,17 @@ Dial A Tutor is a voice-first educational platform designed to bridge the digita
 - **Impact Verifier Dashboard:** A public ledger for funders and NGOs to audit educational outcomes in real-time.
 - **Universal Accessibility:** Designed to be accessible via simple mobile phones (simulated through the web interface).
 
-## Offline & Minting Architecture
+## Connection & SMS Architecture
 
-Dial A Tutor is built with an "Offline-First" mindset to serve students in regions with unreliable internet:
+The student interaction model is designed to be "asynchronous-first" to handle spotty connectivity:
 
-1. **Firestore Offline Persistence:** All learning attempts and proofs are written to a local cache immediately. Even without a connection, the app functions normally.
-2. **Background Sync:** Once the device regains internet access, the Firebase SDK automatically synchronizes all local "offline" proofs with the cloud database.
-3. **Optimistic UI:** Students receive immediate visual confirmation of their achievement and a generated transaction hash, ensuring the learning feedback loop is never broken by connectivity issues.
-4. **Offline Mode:** For demonstrations in zero-connectivity environments, this mode simulates the AI tutoring logic locally to prevent API timeout errors.
+1. **Phone-Based Identity:** Students authenticate using their phone numbers. This number serves as the routing address for academic feedback.
+2. **IVR Simulation:** The web interface simulates an IVR (Interactive Voice Response) call where the AI "speaks" the lesson and the student "speaks" back. In a production environment, this is handled via a telephony provider (e.g., Twilio Voice) connecting to our Genkit flows.
+3. **SMS Feedback Loop:** 
+    - Upon lesson completion, a `StudentReport` is generated in Firestore.
+    - A server-side trigger (Cloud Function) detects this report.
+    - An automated SMS is dispatched to the student's registered phone number with their grade and a verification link.
+4. **Offline Synchronization:** If a student is in a zero-connectivity area, the achievement is cached locally. Once the device syncs, the SMS is triggered automatically, ensuring no learning progress is lost or unconfirmed.
 
 ## Tech Stack
 
