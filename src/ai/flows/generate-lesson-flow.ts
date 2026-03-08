@@ -24,6 +24,14 @@ const lessonPrompt = ai.definePrompt({
   name: 'generateLessonPrompt',
   input: { schema: GenerateLessonInputSchema },
   output: { schema: GenerateLessonOutputSchema },
+  config: {
+    safetySettings: [
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+    ],
+  },
   prompt: `You are an expert curriculum designer for a voice-based educational app called Dial-a-Lesson.
 Your task is to create a short, engaging oral lesson prompt for a student.
 
@@ -38,7 +46,7 @@ Provide:
 2. The 'content' (the question or prompt the student will hear).
 3. The 'expectedAnswer' (what a correct response should generally include).
 
-Your response MUST be a JSON object following the GenerateLessonOutputSchema.`,
+Your response MUST be a valid JSON object. Do not include markdown formatting or backticks.`,
 });
 
 const generateLessonFlow = ai.defineFlow(
@@ -50,7 +58,7 @@ const generateLessonFlow = ai.defineFlow(
   async (input) => {
     const { output } = await lessonPrompt(input);
     if (!output) {
-      throw new Error('Failed to generate lesson content.');
+      throw new Error('Failed to generate lesson content from AI tutor.');
     }
     return output;
   }

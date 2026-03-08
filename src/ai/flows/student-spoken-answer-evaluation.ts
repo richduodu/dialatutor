@@ -3,16 +3,11 @@
  * @fileOverview This file defines a Genkit flow for evaluating a student's spoken answer.
  * It uses a multimodal AI model to transcribe the audio and evaluate comprehension
  * against lesson content in a single efficient step.
- *
- * - evaluateSpokenAnswer - A function that handles the spoken answer evaluation process.
- * - StudentSpokenAnswerEvaluationInput - The input type for the evaluateSpokenAnswer function.
- * - StudentSpokenAnswerEvaluationOutput - The return type for the evaluateSpokenAnswer function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-// 1. Input Schema
 const StudentSpokenAnswerEvaluationInputSchema = z.object({
   audioDataUri: z
     .string()
@@ -28,7 +23,6 @@ export type StudentSpokenAnswerEvaluationInput = z.infer<
   typeof StudentSpokenAnswerEvaluationInputSchema
 >;
 
-// 2. Output Schema
 const StudentSpokenAnswerEvaluationOutputSchema = z.object({
   transcription: z.string().describe('The transcribed text of the spoken answer.'),
   evaluation: z.string().describe('A detailed AI evaluation of the answer.'),
@@ -47,12 +41,18 @@ export type StudentSpokenAnswerEvaluationOutput = z.infer<
   typeof StudentSpokenAnswerEvaluationOutputSchema
 >;
 
-// 3. Multimodal Evaluation Prompt Definition
-// Combining transcription and evaluation into one call to optimize quota and performance.
 const evaluatePrompt = ai.definePrompt({
   name: 'evaluateSpokenAnswerPrompt',
   input: { schema: StudentSpokenAnswerEvaluationInputSchema },
   output: { schema: StudentSpokenAnswerEvaluationOutputSchema },
+  config: {
+    safetySettings: [
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+    ],
+  },
   prompt: `You are an AI tutor designed to evaluate student spoken answers.
 The student provided an oral response to the following lesson.
 
@@ -73,7 +73,6 @@ Evaluation instructions:
 Your response MUST be a JSON object following the StudentSpokenAnswerEvaluationOutputSchema.`,
 });
 
-// 4. Flow Definition
 const studentSpokenAnswerEvaluationFlow = ai.defineFlow(
   {
     name: 'studentSpokenAnswerEvaluationFlow',
@@ -81,23 +80,16 @@ const studentSpokenAnswerEvaluationFlow = ai.defineFlow(
     outputSchema: StudentSpokenAnswerEvaluationOutputSchema,
   },
   async (input) => {
-    // By using a single multimodal call, we reduce quota usage and latency.
     const { output } = await evaluatePrompt(input);
 
     if (!output) {
       throw new Error('Failed to get evaluation output from AI tutor.');
     }
 
-    return {
-      transcription: output.transcription,
-      evaluation: output.evaluation,
-      isCorrect: output.isCorrect,
-      score: output.score,
-    };
+    return output;
   }
 );
 
-// 5. Wrapper function
 export async function evaluateSpokenAnswer(
   input: StudentSpokenAnswerEvaluationInput
 ): Promise<StudentSpokenAnswerEvaluationOutput> {
