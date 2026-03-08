@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, Search, Filter, ShieldCheck, GraduationCap, Globe, Loader2, Database, Tooltip, Info } from "lucide-react"
+import { ExternalLink, Search, Globe, Loader2, Database, Info } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, limit } from "firebase/firestore"
@@ -83,7 +83,7 @@ export default function FunderDashboard() {
                 <Database className="h-5 w-5 text-accent" />
                 <div>
                   <p className="text-[10px] font-bold uppercase text-muted-foreground">Verified Proofs</p>
-                  <p className="text-sm font-bold">{proofs?.length || 0} Transactions</p>
+                  <p className="text-sm font-bold">{proofs?.length || 0} Records</p>
                 </div>
               </div>
             </div>
@@ -93,7 +93,7 @@ export default function FunderDashboard() {
         <Alert className="mb-12 bg-primary/5 border-primary/20 rounded-2xl">
           <Info className="h-4 w-4 text-primary" />
           <AlertDescription className="text-xs text-primary/80 font-medium">
-            <strong>Testnet Notice:</strong> This dashboard displays transactions simulated on the Polygon Amoy Testnet environment for impact auditing demonstration.
+            <strong>Blockchain Transparency:</strong> This dashboard displays learning transactions currently recorded on the Polygon Amoy Testnet. In a production environment, these represent immutable proofs of educational impact.
           </AlertDescription>
         </Alert>
 
@@ -172,7 +172,7 @@ export default function FunderDashboard() {
                       <TableCell className="font-medium py-4">
                         <div className="flex items-center gap-2">
                           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                            <GraduationCap className="h-4 w-4 text-primary" />
+                            <Database className="h-4 w-4 text-primary" />
                           </div>
                           <span className="truncate max-w-[100px]">Learner #{row.studentId.slice(0, 5)}</span>
                         </div>
@@ -194,7 +194,7 @@ export default function FunderDashboard() {
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm" className="gap-1 h-8 text-[10px] font-bold border-primary text-primary hover:bg-primary hover:text-white" asChild>
                           <a href={`https://amoy.polygonscan.com/tx/${row.transactionHash}`} target="_blank" rel="noopener noreferrer">
-                            Verify <ExternalLink className="h-3 w-3" />
+                            AmoyScan <ExternalLink className="h-3 w-3" />
                           </a>
                         </Button>
                       </TableCell>
@@ -203,7 +203,7 @@ export default function FunderDashboard() {
                   {filteredProofs.length === 0 && !isProofsLoading && (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic">
-                        No learning transactions found.
+                        No learning transactions found on Amoy Testnet.
                       </TableCell>
                     </TableRow>
                   )}
