@@ -9,11 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Smartphone, LogIn, UserPlus, Loader2, User, Globe } from "lucide-react"
+import { Smartphone, LogIn, UserPlus, Loader2, User, Globe, AlertCircle } from "lucide-react"
 import { useAuth, useUser, useFirestore } from "@/firebase"
 import { signInAnonymously } from "firebase/auth"
-import { doc } from "firebase/firestore"
-import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 
 import 'react-phone-number-input/style.css'
@@ -41,6 +40,14 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router])
 
+  const checkUserExists = async (phone: string) => {
+    if (!db) return null
+    const studentsRef = collection(db, "students")
+    const q = query(studentsRef, where("phoneNumber", "==", phone))
+    const querySnapshot = await getDocs(q)
+    return !querySnapshot.empty
+  }
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -56,6 +63,29 @@ export default function LoginPage() {
     setIsSubmitting(true)
     
     try {
+      const exists = await checkUserExists(phoneNumber)
+
+      if (mode === 'login' && !exists) {
+        toast({
+          title: "Account Not Found",
+          description: "This phone number isn't registered. Please create an account first.",
+          variant: "destructive"
+        })
+        setMode('register')
+        setIsSubmitting(false)
+        return
+      }
+
+      if (mode === 'register' && exists) {
+        toast({
+          title: "Account Already Exists",
+          description: "This phone number is already registered. Please login instead.",
+        })
+        setMode('login')
+        setIsSubmitting(false)
+        return
+      }
+
       // In this prototype, we use anonymous sign-in to simulate the phone-based identity
       const userCredential = await signInAnonymously(auth)
       const newUser = userCredential.user
@@ -63,7 +93,7 @@ export default function LoginPage() {
       if (mode === 'register' && db) {
         // Save the student profile immediately after registration
         const studentRef = doc(db, 'students', newUser.uid)
-        setDocumentNonBlocking(studentRef, {
+        await setDoc(studentRef, {
           id: newUser.uid,
           externalAuthId: newUser.uid,
           phoneNumber: phoneNumber,
@@ -83,6 +113,7 @@ export default function LoginPage() {
         })
       }
     } catch (error) {
+      console.error("Auth error:", error)
       toast({
         title: "Authentication Failed",
         description: "Please try again later.",
