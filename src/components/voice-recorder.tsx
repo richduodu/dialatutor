@@ -67,21 +67,33 @@ export function VoiceRecorder({ lessonContent, expectedAnswer, onComplete }: Voi
       reader.onloadend = async () => {
         const base64Audio = reader.result as string
         
-        const evaluation = await evaluateSpokenAnswer({
-          audioDataUri: base64Audio,
-          lessonContent,
-          expectedAnswer,
-        })
+        try {
+          const evaluation = await evaluateSpokenAnswer({
+            audioDataUri: base64Audio,
+            lessonContent,
+            expectedAnswer,
+          })
 
-        setResult(evaluation)
-        setIsProcessing(false)
-        onComplete(evaluation)
+          setResult(evaluation)
+          setIsProcessing(false)
+          onComplete(evaluation)
+        } catch (error: any) {
+          setIsProcessing(false)
+          const isQuotaError = error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED');
+          toast({
+            title: isQuotaError ? "AI Tutor is Busy" : "Evaluation Failed",
+            description: isQuotaError 
+              ? "The AI tutor has reached its current limit. Please wait about a minute and try again." 
+              : "There was an error analyzing your answer. Please try again.",
+            variant: "destructive"
+          })
+        }
       }
     } catch (error) {
       setIsProcessing(false)
       toast({
         title: "Processing Failed",
-        description: "There was an error analyzing your answer. Please try again.",
+        description: "There was an error preparing the audio for analysis.",
         variant: "destructive"
       })
     }

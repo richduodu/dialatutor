@@ -80,10 +80,13 @@ export default function LessonPage() {
         expectedAnswer: generatedLesson.expectedAnswer
       })
       setStep(1)
-    } catch (error) {
+    } catch (error: any) {
+      const isQuotaError = error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED');
       toast({
-        title: "Generation Failed",
-        description: "We couldn't prepare your lesson. Please try again.",
+        title: isQuotaError ? "Curriculum Designer Busy" : "Generation Failed",
+        description: isQuotaError 
+          ? "Our AI tutors are currently at capacity. Please try again in a minute." 
+          : "We couldn't prepare your lesson. Please try again.",
         variant: "destructive"
       })
     } finally {
