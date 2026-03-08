@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -35,6 +34,7 @@ export default function LessonPage() {
   const [isOfflineMode, setIsOfflineMode] = useState(false)
   const [mintingStatus, setMintingStatus] = useState<'idle' | 'minting' | 'completed'>('idle')
   const [txHash, setTxHash] = useState<string>("")
+  const [contractAddress, setContractAddress] = useState<string>("")
   const [lesson, setLesson] = useState<{ id: string, title: string, content: string, expectedAnswer: string } | null>(null)
 
   const studentRef = useMemoFirebase(() => {
@@ -124,12 +124,13 @@ export default function LessonPage() {
   }
 
   const handleEvaluationComplete = async (evaluation: any) => {
-    if (!user || !lesson) return
+    if (!user || !lesson || !db) return
 
     const studentId = user.uid
     const attemptId = crypto.randomUUID()
+    const now = new Date().toISOString()
     
-    // 1. Save results to Firestore
+    // 1. Save Lesson Attempt to Firestore
     const attemptRef = doc(db, 'students', studentId, 'lessonAttempts', attemptId)
     setDocumentNonBlocking(attemptRef, {
       id: attemptId,
@@ -137,8 +138,8 @@ export default function LessonPage() {
       lessonId: lesson.id,
       lessonTitle: lesson.title,
       subject: subject,
-      startTime: new Date().toISOString(),
-      endTime: new Date().toISOString(),
+      startTime: now,
+      endTime: now,
       transcribedText: evaluation.transcription,
       aiEvaluationResult: evaluation.evaluation,
       grade: evaluation.score,
@@ -152,14 +153,14 @@ export default function LessonPage() {
       setMintingStatus('minting')
 
       try {
-        // 3. Trigger Live Blockchain Minting (Server Action)
+        // 3. Trigger Blockchain Minting (Server Action)
         const mintResult = await mintProof({
           studentId,
           lessonTitle: lesson.title,
           grade: evaluation.score
         })
 
-        // 4. Save Proof Data
+        // 4. Save Proof Data to private and public collections
         const proofId = crypto.randomUUID()
         const proofData = {
           id: proofId,
@@ -169,10 +170,10 @@ export default function LessonPage() {
           lessonTitle: lesson.title,
           grade: evaluation.score,
           blockchainNetwork: mintResult.network,
-          contractAddress: '0x89542654019213892301923019230192301e921',
+          contractAddress: mintResult.contractAddress,
           tokenId: mintResult.tokenId,
           transactionHash: mintResult.transactionHash,
-          mintingDate: new Date().toISOString(),
+          mintingDate: now,
           blockExplorerUrl: `https://amoy.polygonscan.com/tx/${mintResult.transactionHash}`,
           isOfflineMode: isOfflineMode,
           mode: mintResult.mode
@@ -181,29 +182,45 @@ export default function LessonPage() {
         setDocumentNonBlocking(doc(db, 'students', studentId, 'proofsOfLearning', proofId), proofData, { merge: true })
         setDocumentNonBlocking(doc(db, 'proofsOfLearning_public', proofId), proofData, { merge: true })
 
-        // 5. Trigger Backend Notification (Server Action)
-        if (!isOfflineMode) {
+        // 5. Create Student Report for Audit/SMS Trigger
+        const reportId = crypto.randomUUID()
+        setDocumentNonBlocking(doc(db, 'students', studentId, 'studentReports', reportId), {
+          id: reportId,
+          studentId,
+          generatedDate: now,
+          reportContent: `Student completed "${lesson.title}" with a comprehension score of ${evaluation.score}%. Verification hash: ${mintResult.transactionHash}`,
+          lessonAttemptIds: [attemptId],
+          overallGrade: evaluation.score,
+          sentViaSms: !isOfflineMode && !!studentProfile?.phoneNumber,
+          sentDate: !isOfflineMode ? now : null
+        }, { merge: true })
+
+        // 6. Trigger Backend Notification (Server Action)
+        if (!isOfflineMode && studentProfile?.phoneNumber) {
           notifyStudent({
-            phoneNumber: studentProfile?.phoneNumber || "Simulated Phone",
+            phoneNumber: studentProfile.phoneNumber,
             lessonTitle: lesson.title,
             score: evaluation.score
-          }).catch(err => console.error("Notification Flow failed:", err));
+          }).catch(err => console.error("[BACKEND] Notification Flow failed:", err));
         }
 
-        // 6. Final UI Step
+        // 7. Final UI Step
         setTxHash(mintResult.transactionHash)
+        setContractAddress(mintResult.contractAddress)
         setMintingStatus('completed')
         setStep(3)
 
       } catch (err) {
-        console.error("Minting Flow failed:", err)
+        console.error("[BLOCKCHAIN] Minting Flow failed:", err)
         toast({
           title: "Blockchain Minting Failed",
-          description: "We couldn't record your achievement on-chain. Please try again later.",
+          description: "We couldn't record your achievement on-chain. Your progress is saved locally.",
           variant: "destructive"
         })
-        setStep(1) // Return to lesson
+        setStep(1) // Return to lesson so they can see the grade
       }
+    } else {
+      // If failed, we stay on step 1 so they can retake it
     }
   }
 
@@ -410,7 +427,7 @@ export default function LessonPage() {
                       <Info className="h-5 w-5 shrink-0 mt-0.5" />
                       <div>
                         <p className="text-xs font-bold uppercase mb-1">Offline Record Created</p>
-                        <p className="text-xs opacity-90">This achievement was recorded in offline mode. It is stored locally and will sync with the public ledger once an internet connection is established.</p>
+                        <p className="text-xs opacity-90">This achievement was recorded in offline mode. It is stored locally and will sync once internet is regained.</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -429,6 +446,10 @@ export default function LessonPage() {
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">Network</span>
                         <Badge variant="outline" className="text-[10px] font-mono">POLYGON AMOY</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Contract</span>
+                        <span className="font-mono text-[10px] truncate max-w-[120px]">{contractAddress}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">Hash</span>
