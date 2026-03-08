@@ -221,7 +221,7 @@ export default function LessonPage() {
               <div className="flex items-center space-x-2 bg-white/50 px-3 py-1.5 rounded-full border border-dashed">
                 <Label htmlFor="demo-mode" className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1 cursor-pointer">
                   {isDemoMode ? <WifiOff className="h-3 w-3 text-orange-500" /> : <Wifi className="h-3 w-3 text-green-500" />}
-                  Offline Demo
+                  Offline Mode
                 </Label>
                 <Switch 
                   id="demo-mode" 
@@ -292,7 +292,7 @@ export default function LessonPage() {
               {isDemoMode && (
                 <div className="flex items-center justify-center gap-2 mt-2">
                   <Badge variant="outline" className="text-[10px] bg-orange-50 text-orange-600 border-orange-200 uppercase px-3">
-                    <WifiOff className="h-2 w-2 mr-1" /> Offline Demo Active
+                    <WifiOff className="h-2 w-2 mr-1" /> Offline Mode Active
                   </Badge>
                 </div>
               )}
@@ -393,7 +393,7 @@ export default function LessonPage() {
                       <Info className="h-5 w-5 shrink-0 mt-0.5" />
                       <div>
                         <p className="text-xs font-bold uppercase mb-1">Offline Record Created</p>
-                        <p className="text-xs opacity-90">This achievement was recorded in demo mode. It is stored locally and will sync with the public ledger once an internet connection is established.</p>
+                        <p className="text-xs opacity-90">This achievement was recorded in offline mode. It is stored locally and will sync with the public ledger once an internet connection is established.</p>
                       </div>
                     </CardContent>
                   </Card>

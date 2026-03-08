@@ -3,6 +3,7 @@
 
 import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Mic, Square, Loader2, CheckCircle2, AlertCircle, RefreshCcw, BrainCircuit, WifiOff } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { evaluateSpokenAnswer } from "@/ai/flows/student-spoken-answer-evaluation"
@@ -101,7 +102,7 @@ export function VoiceRecorder({ lessonContent, expectedAnswer, onComplete, isDem
           toast({
             title: isQuotaError ? "AI Tutor is Busy" : "Evaluation Failed",
             description: isQuotaError 
-              ? "The AI tutor has reached its current limit. Please wait about a minute and try again. Consider enabling 'Offline Demo Mode'." 
+              ? "The AI tutor has reached its current limit. Please wait about a minute and try again. Consider enabling 'Offline Mode'." 
               : "There was an error analyzing your answer. Please try again.",
             variant: "destructive"
           })
