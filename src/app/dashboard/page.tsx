@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, Search, Filter, ShieldCheck, GraduationCap, Globe, Loader2, Database, Tooltip } from "lucide-react"
+import { ExternalLink, Search, Filter, ShieldCheck, GraduationCap, Globe, Loader2, Database, Tooltip, Info } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, limit } from "firebase/firestore"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function FunderDashboard() {
   const { user, isUserLoading } = useUser()
@@ -64,7 +65,7 @@ export default function FunderDashboard() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-12">
-        <header className="mb-12">
+        <header className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="space-y-1">
               <h1 className="text-4xl font-extrabold tracking-tight font-headline">Public Impact Ledger</h1>
@@ -88,6 +89,13 @@ export default function FunderDashboard() {
             </div>
           </div>
         </header>
+
+        <Alert className="mb-12 bg-primary/5 border-primary/20 rounded-2xl">
+          <Info className="h-4 w-4 text-primary" />
+          <AlertDescription className="text-xs text-primary/80 font-medium">
+            <strong>Prototype Notice:</strong> Transaction hashes shown here are unique simulations for this high-fidelity demonstration. In production, these link to immutable mainnet records.
+          </AlertDescription>
+        </Alert>
 
         <div className="grid md:grid-cols-3 gap-8 mb-12">
           <Card className="bg-primary text-primary-foreground border-none shadow-xl">

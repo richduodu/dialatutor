@@ -127,9 +127,12 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ attemp
                 <ShieldCheck className="h-32 w-32" />
               </div>
               <CardContent className="p-8 space-y-6">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-6 w-6" />
-                  <h2 className="text-xl font-bold font-headline">Blockchain Confirmation</h2>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-6 w-6" />
+                    <h2 className="text-xl font-bold font-headline">Blockchain Confirmation</h2>
+                  </div>
+                  <Badge variant="secondary" className="bg-white/20 text-white border-none text-[8px] h-4">SIMULATED PROOF</Badge>
                 </div>
                 <p className="opacity-90 max-w-md">
                   This record is secured on the <strong>Polygon PoS</strong> blockchain. It is publicly verifiable, immutable, and tamper-proof.

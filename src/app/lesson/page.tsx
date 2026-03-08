@@ -340,9 +340,12 @@ export default function LessonPage() {
 
                 <div className="space-y-4 text-left">
                   <div className="p-5 rounded-2xl bg-muted/50 border border-border">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Database className="h-4 w-4 text-primary" />
-                      <p className="text-[10px] font-bold uppercase text-muted-foreground">Blockchain Transaction Proof</p>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Database className="h-4 w-4 text-primary" />
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Blockchain Transaction Proof</p>
+                      </div>
+                      <Badge variant="secondary" className="text-[8px] h-4 bg-primary/10 text-primary border-none">SIMULATED PROOF</Badge>
                     </div>
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between">
