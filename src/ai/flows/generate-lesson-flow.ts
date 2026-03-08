@@ -46,7 +46,7 @@ Provide:
 2. The 'content' (the question or prompt the student will hear).
 3. The 'expectedAnswer' (what a correct response should generally include).
 
-Your response MUST be a valid JSON object. Do not include markdown formatting or backticks.`,
+Your response MUST be a valid JSON object following the schema precisely. Do not include markdown formatting or backticks.`,
 });
 
 const generateLessonFlow = ai.defineFlow(
