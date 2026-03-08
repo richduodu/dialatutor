@@ -1,41 +1,86 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { VoiceRecorder } from "@/components/voice-recorder"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit } from "lucide-react"
+import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, GraduationCap, BookOpen, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useUser, useFirestore } from "@/firebase"
 import { doc } from "firebase/firestore"
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { generateLesson } from "@/ai/flows/generate-lesson-flow"
+import { useToast } from "@/hooks/use-toast"
 
 export default function LessonPage() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
   const router = useRouter()
-  const [step, setStep] = useState(1) // 1: Lesson, 2: Grading, 3: Minting, 4: Success
+  const { toast } = useToast()
+  
+  const [step, setStep] = useState(0) // 0: Selection, 1: Lesson, 2: Grading, 3: Minting, 4: Success
+  const [subject, setSubject] = useState<string>("")
+  const [gradeLevel, setGradeLevel] = useState<string>("")
+  const [isGenerating, setIsGenerating] = useState(false)
   const [isGrading, setIsGrading] = useState(false)
   const [mintingStatus, setMintingStatus] = useState<'idle' | 'minting' | 'completed'>('idle')
   const [txHash, setTxHash] = useState<string>("")
   const [lastEvaluation, setLastEvaluation] = useState<any>(null)
+  const [lesson, setLesson] = useState<{ id: string, title: string, content: string, expectedAnswer: string } | null>(null)
 
-  const lesson = {
-    id: "multiplication-101",
-    title: "Basic Mathematics: Multiplication",
-    content: "Explain why multiplying any number by zero results in zero. Use the concept of 'groups of items' in your explanation.",
-    expectedAnswer: "Multiplying by zero means you have zero groups of a number, or groups with zero items in them. Either way, there is nothing in total."
-  }
+  const subjects = [
+    "Mathematics",
+    "Science",
+    "History",
+    "Geography",
+    "Language Arts",
+    "General Knowledge"
+  ]
+
+  const grades = [
+    "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8"
+  ]
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push("/login")
     }
   }, [user, isUserLoading, router])
+
+  const handleStartLesson = async () => {
+    if (!subject || !gradeLevel) {
+      toast({
+        title: "Selection Required",
+        description: "Please pick a subject and your grade level to continue.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsGenerating(true)
+    try {
+      const generatedLesson = await generateLesson({ subject, gradeLevel })
+      setLesson({
+        id: crypto.randomUUID(),
+        title: generatedLesson.title,
+        content: generatedLesson.content,
+        expectedAnswer: generatedLesson.expectedAnswer
+      })
+      setStep(1)
+    } catch (error) {
+      toast({
+        title: "Generation Failed",
+        description: "We couldn't prepare your lesson. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsGenerating(false)
+    }
+  }
 
   const handleProcessingChange = (processing: boolean) => {
     setIsGrading(processing)
@@ -45,7 +90,7 @@ export default function LessonPage() {
   }
 
   const handleEvaluationComplete = (evaluation: any) => {
-    if (!user) return
+    if (!user || !lesson) return
     setLastEvaluation(evaluation)
 
     if (evaluation.isCorrect) {
@@ -115,7 +160,6 @@ export default function LessonPage() {
         setStep(4)
       }, 3000)
     } else {
-      // If incorrect, show the feedback in the VoiceRecorder which is in Step 1
       setStep(1)
     }
   }
@@ -141,26 +185,98 @@ export default function LessonPage() {
         <div className="mb-8 flex items-center justify-between">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold font-headline">Dial-a-Lesson</h1>
-            <p className="text-muted-foreground">Unit 4: Mathematics Fundamentals</p>
+            <p className="text-muted-foreground">Personalized AI Oral Instruction</p>
           </div>
           <Badge variant="outline" className="bg-white px-3 py-1 font-mono uppercase">
             Learner: {user?.uid.slice(0, 5)}
           </Badge>
         </div>
 
-        {step === 1 && (
+        {step === 0 && (
+          <Card className="border-none shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <CardHeader className="text-center">
+              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
+                <BookOpen className="h-8 w-8 text-primary" />
+              </div>
+              <CardTitle className="text-2xl font-bold font-headline">What will you learn today?</CardTitle>
+              <CardDescription>Select your subject and educational level.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-muted-foreground">Subject</label>
+                  <Select value={subject} onValueChange={setSubject}>
+                    <SelectTrigger className="h-12 rounded-xl border-2">
+                      <SelectValue placeholder="Pick a subject..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase text-muted-foreground">Grade Level</label>
+                  <Select value={gradeLevel} onValueChange={setGradeLevel}>
+                    <SelectTrigger className="h-12 rounded-xl border-2">
+                      <SelectValue placeholder="Select your grade..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {grades.map((g) => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Button 
+                className="w-full h-14 rounded-full text-lg font-bold gap-2 shadow-xl bg-primary hover:bg-primary/90 transition-all active:scale-95" 
+                onClick={handleStartLesson}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" /> Preparing Lesson...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5" /> Start Learning
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {step === 1 && lesson && (
           <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setStep(0)} className="text-muted-foreground hover:text-primary">
+                ← Change Subject
+              </Button>
+            </div>
             <Card className="border-none shadow-xl bg-primary text-primary-foreground overflow-hidden relative">
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <Smartphone className="h-24 w-24" />
               </div>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-none">Audio Prompt</Badge>
+                <CardTitle className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-none">
+                      {subject}
+                    </Badge>
+                    <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-none">
+                      {gradeLevel}
+                    </Badge>
+                  </div>
+                  <span className="text-2xl mt-2 font-headline">{lesson.title}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-medium leading-relaxed">
+                <p className="text-xl font-medium leading-relaxed italic border-l-4 border-white/20 pl-4 py-2">
                   "{lesson.content}"
                 </p>
               </CardContent>
@@ -249,7 +365,7 @@ export default function LessonPage() {
                       </div>
                       <div>
                         <p className="text-xs font-bold uppercase text-primary">SMS Confirmation Sent</p>
-                        <p className="text-sm text-muted-foreground">"Congrats! You completed Unit 4. View your certificate: dialatutor.com/p/{txHash.slice(0, 8)}"</p>
+                        <p className="text-sm text-muted-foreground">"Congrats! You completed your {subject} lesson. View your certificate: dialatutor.com/p/{txHash.slice(0, 8)}"</p>
                       </div>
                     </div>
                   </div>
@@ -260,7 +376,8 @@ export default function LessonPage() {
                     <a href="/my-progress">View My Progress</a>
                   </Button>
                   <Button variant="outline" className="w-full rounded-full h-12" onClick={() => {
-                    setStep(1)
+                    setStep(0)
+                    setLesson(null)
                     setLastEvaluation(null)
                   }}>
                     Take Another Lesson
