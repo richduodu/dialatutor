@@ -2,7 +2,7 @@
 /**
  * @fileOverview This file defines a Genkit flow for evaluating a student's spoken answer.
  * Includes guardrails to ensure evaluations remain focused on academic achievement and
- * reject inappropriate content.
+ * reject inappropriate content. Includes retry logic for API stability.
  */
 
 import { ai } from '@/ai/genkit';
@@ -47,9 +47,9 @@ const evaluatePrompt = ai.definePrompt({
   output: { schema: StudentSpokenAnswerEvaluationOutputSchema },
   config: {
     safetySettings: [
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
       { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_LOW_AND_ABOVE' },
     ],
   },
@@ -78,6 +78,22 @@ Audio: {{media url=audioDataUri}}
 Your response MUST be a JSON object following the StudentSpokenAnswerEvaluationOutputSchema.`,
 });
 
+/**
+ * Helper function to retry a promise-based function with exponential backoff.
+ */
+async function withRetry<T>(fn: () => Promise<T>, retries = 2, delay = 2000): Promise<T> {
+  try {
+    return await fn();
+  } catch (error: any) {
+    const isQuotaError = error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED');
+    if (retries > 0 && isQuotaError) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return withRetry(fn, retries - 1, delay * 2);
+    }
+    throw error;
+  }
+}
+
 const studentSpokenAnswerEvaluationFlow = ai.defineFlow(
   {
     name: 'studentSpokenAnswerEvaluationFlow',
@@ -85,13 +101,13 @@ const studentSpokenAnswerEvaluationFlow = ai.defineFlow(
     outputSchema: StudentSpokenAnswerEvaluationOutputSchema,
   },
   async (input) => {
-    const { output } = await evaluatePrompt(input);
-
-    if (!output) {
-      throw new Error('Failed to get evaluation output from AI tutor.');
-    }
-
-    return output;
+    return withRetry(async () => {
+      const { output } = await evaluatePrompt(input);
+      if (!output) {
+        throw new Error('Failed to get evaluation output from AI tutor.');
+      }
+      return output;
+    });
   }
 );
 

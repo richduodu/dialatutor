@@ -2,7 +2,7 @@
 /**
  * @fileOverview This file defines a Genkit flow for generating a dynamic educational lesson.
  * It takes a subject and grade level and returns a lesson title, prompt, and expected answer.
- * Includes strict guardrails to ensure content remains educational.
+ * Includes strict guardrails to ensure content remains educational and retry logic for API stability.
  */
 
 import { ai } from '@/ai/genkit';
@@ -27,9 +27,9 @@ const lessonPrompt = ai.definePrompt({
   output: { schema: GenerateLessonOutputSchema },
   config: {
     safetySettings: [
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
       { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_LOW_AND_ABOVE' },
     ],
   },
@@ -55,6 +55,22 @@ Provide:
 Your response MUST be a valid JSON object following the schema precisely.`,
 });
 
+/**
+ * Helper function to retry a promise-based function with exponential backoff.
+ */
+async function withRetry<T>(fn: () => Promise<T>, retries = 2, delay = 2000): Promise<T> {
+  try {
+    return await fn();
+  } catch (error: any) {
+    const isQuotaError = error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED');
+    if (retries > 0 && isQuotaError) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return withRetry(fn, retries - 1, delay * 2);
+    }
+    throw error;
+  }
+}
+
 const generateLessonFlow = ai.defineFlow(
   {
     name: 'generateLessonFlow',
@@ -62,11 +78,13 @@ const generateLessonFlow = ai.defineFlow(
     outputSchema: GenerateLessonOutputSchema,
   },
   async (input) => {
-    const { output } = await lessonPrompt(input);
-    if (!output) {
-      throw new Error('Failed to generate lesson content from AI tutor.');
-    }
-    return output;
+    return withRetry(async () => {
+      const { output } = await lessonPrompt(input);
+      if (!output) {
+        throw new Error('Failed to generate lesson content from AI tutor.');
+      }
+      return output;
+    });
   }
 );
 
