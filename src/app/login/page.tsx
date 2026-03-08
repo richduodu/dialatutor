@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Smartphone, LogIn, UserPlus, Loader2, User } from "lucide-react"
+import { Smartphone, LogIn, UserPlus, Loader2, User, Globe } from "lucide-react"
 import { useAuth, useUser, useFirestore } from "@/firebase"
 import { signInAnonymously } from "firebase/auth"
 import { doc } from "firebase/firestore"
@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast"
 
 export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [countryCode, setCountryCode] = useState("+1")
   const [phoneNumber, setPhoneNumber] = useState("")
   const [fullName, setFullName] = useState("")
   const [grade, setGrade] = useState("")
@@ -30,6 +31,19 @@ export default function LoginPage() {
   const { toast } = useToast()
 
   const grades = Array.from({ length: 12 }, (_, i) => `Grade ${i + 1}`)
+  
+  const countryCodes = [
+    { code: "+1", name: "US/CA" },
+    { code: "+44", name: "UK" },
+    { code: "+234", name: "NG" },
+    { code: "+91", name: "IN" },
+    { code: "+254", name: "KE" },
+    { code: "+27", name: "ZA" },
+    { code: "+61", name: "AU" },
+    { code: "+33", name: "FR" },
+    { code: "+49", name: "DE" },
+    { code: "+81", name: "JP" },
+  ]
 
   // Redirect if already logged in
   useEffect(() => {
@@ -42,6 +56,8 @@ export default function LoginPage() {
     e.preventDefault()
     setIsSubmitting(true)
     
+    const fullPhoneNumber = `${countryCode}${phoneNumber.replace(/\D/g, '')}`
+    
     try {
       // In this prototype, we use anonymous sign-in to simulate the phone-based identity
       const userCredential = await signInAnonymously(auth)
@@ -53,7 +69,7 @@ export default function LoginPage() {
         setDocumentNonBlocking(studentRef, {
           id: newUser.uid,
           externalAuthId: newUser.uid,
-          phoneNumber: phoneNumber,
+          phoneNumber: fullPhoneNumber,
           name: fullName,
           gradeLevel: grade, // Store preferred grade
           createdAt: new Date().toISOString()
@@ -124,17 +140,33 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="phone">Phone Number</Label>
-                <div className="relative">
-                  <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    id="phone" 
-                    placeholder="+1 (555) 000-0000" 
-                    className="pl-10 h-11 rounded-xl"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    required
-                    disabled={isSubmitting}
-                  />
+                <div className="flex gap-2">
+                  <div className="w-32 shrink-0">
+                    <Select value={countryCode} onValueChange={setCountryCode} disabled={isSubmitting}>
+                      <SelectTrigger className="h-11 rounded-xl">
+                        <SelectValue placeholder="+1" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {countryCodes.map((c) => (
+                          <SelectItem key={c.code} value={c.code}>
+                            {c.name} ({c.code})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="relative flex-1">
+                    <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="phone" 
+                      placeholder="555-000-0000" 
+                      className="pl-10 h-11 rounded-xl"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      required
+                      disabled={isSubmitting}
+                    />
+                  </div>
                 </div>
               </div>
 
