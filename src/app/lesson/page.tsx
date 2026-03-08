@@ -8,7 +8,7 @@ import { VoiceRecorder } from "@/components/voice-recorder"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, BookOpen, Sparkles, RefreshCw, Database, WifiOff, Wifi } from "lucide-react"
+import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, BookOpen, Sparkles, RefreshCw, Database, WifiOff, Wifi, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -140,6 +140,7 @@ export default function LessonPage() {
       aiEvaluationResult: evaluation.evaluation,
       grade: evaluation.score,
       isCompleted: evaluation.isCorrect,
+      isOfflineDemo: isDemoMode
     }, { merge: true })
 
     if (evaluation.isCorrect) {
@@ -162,7 +163,8 @@ export default function LessonPage() {
           tokenId: Math.floor(Math.random() * 1000000).toString(),
           transactionHash: generatedTxHash,
           mintingDate: new Date().toISOString(),
-          blockExplorerUrl: `https://amoy.polygonscan.com/tx/${generatedTxHash}`
+          blockExplorerUrl: `https://amoy.polygonscan.com/tx/${generatedTxHash}`,
+          isOfflineDemo: isDemoMode
         }
         setDocumentNonBlocking(doc(db, 'students', studentId, 'proofsOfLearning', proofId), proofData, { merge: true })
         setDocumentNonBlocking(doc(db, 'proofsOfLearning_public', proofId), proofData, { merge: true })
@@ -288,9 +290,11 @@ export default function LessonPage() {
                 )}
               </Button>
               {isDemoMode && (
-                <p className="text-[10px] text-center text-orange-500 font-bold uppercase tracking-widest">
-                  Simulation Active: No API connection required
-                </p>
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <Badge variant="outline" className="text-[10px] bg-orange-50 text-orange-600 border-orange-200 uppercase px-3">
+                    <WifiOff className="h-2 w-2 mr-1" /> Offline Demo Active
+                  </Badge>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -327,7 +331,7 @@ export default function LessonPage() {
                       {gradeLevel}
                     </Badge>
                     {isDemoMode && (
-                      <Badge variant="outline" className="text-[8px] border-white/40 text-white">DEMO MODE</Badge>
+                      <Badge variant="outline" className="text-[8px] border-white/40 text-white">OFFLINE MODE</Badge>
                     )}
                   </div>
                   <span className="text-2xl mt-2 font-headline">{lesson.title}</span>
@@ -363,7 +367,9 @@ export default function LessonPage() {
             </div>
             <div className="max-w-xs mx-auto">
               <Progress value={66} className="h-2" />
-              <p className="text-[10px] uppercase font-bold mt-2 text-muted-foreground">Transaction broadcasted...</p>
+              <p className="text-[10px] uppercase font-bold mt-2 text-muted-foreground">
+                {isDemoMode ? "Queuing for background sync..." : "Transaction broadcasted..."}
+              </p>
             </div>
           </div>
         )}
@@ -380,6 +386,18 @@ export default function LessonPage() {
                 <p className="text-muted-foreground mb-8">
                   Your response was verified and your Proof of Learning has been permanently recorded on the blockchain.
                 </p>
+
+                {isDemoMode && (
+                  <Card className="mb-6 bg-orange-50 border-orange-100 text-orange-800 text-left">
+                    <CardContent className="p-4 flex gap-3 items-start">
+                      <Info className="h-5 w-5 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-bold uppercase mb-1">Offline Record Created</p>
+                        <p className="text-xs opacity-90">This achievement was recorded in demo mode. It is stored locally and will sync with the public ledger once an internet connection is established.</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <div className="space-y-4 text-left">
                   <div className="p-5 rounded-2xl bg-muted/50 border border-border">

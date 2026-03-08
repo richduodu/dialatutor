@@ -7,10 +7,19 @@ Dial A Tutor is a voice-first educational platform designed to bridge the digita
 
 - **Voice-First Interaction:** Simulated IVR (Interactive Voice Response) system using AI for oral lesson delivery and evaluation.
 - **AI-Powered Tutoring:** Leverages Google Gemini (via Genkit) to generate dynamic lessons and evaluate student responses with strict academic guardrails.
-- **Offline Demo Mode:** A special toggle in the Lesson interface that mocks AI responses, allowing for seamless demonstrations even without internet connectivity or API access.
+- **Offline Learning Mode:** A special toggle in the Lesson interface that mocks AI responses, allowing for seamless demonstrations even without internet connectivity or API access.
 - **Blockchain Verification:** Automatically mints "Proof of Learning" tokens on the Polygon Amoy Testnet for every successful lesson completion.
 - **Impact Verifier Dashboard:** A public ledger for funders and NGOs to audit educational outcomes in real-time.
 - **Universal Accessibility:** Designed to be accessible via simple mobile phones (simulated through the web interface).
+
+## Offline & Minting Architecture
+
+Dial A Tutor is built with an "Offline-First" mindset to serve students in regions with unreliable internet:
+
+1. **Firestore Offline Persistence:** All learning attempts and proofs are written to a local cache immediately. Even without a connection, the app functions normally.
+2. **Background Sync:** Once the device regains internet access, the Firebase SDK automatically synchronizes all local "offline" proofs with the cloud database.
+3. **Optimistic UI:** Students receive immediate visual confirmation of their achievement and a generated transaction hash, ensuring the learning feedback loop is never broken by connectivity issues.
+4. **Offline Demo Mode:** For demonstrations in zero-connectivity environments, this mode simulates the AI tutoring logic locally to prevent API timeout errors.
 
 ## Tech Stack
 
@@ -51,13 +60,6 @@ Dial A Tutor is a voice-first educational platform designed to bridge the digita
    npm run dev
    ```
    Open [http://localhost:9002](http://localhost:9002) in your browser.
-
-## Offline Demo Instructions
-
-To demonstrate Dial A Tutor without an internet connection:
-1. Load the `/lesson` page while online to ensure the browser caches the assets.
-2. Toggle the **"Offline Demo Mode"** switch at the top right of the lesson selection screen.
-3. Select any subject and start learning. The app will bypass live AI calls and use simulated data to complete the workflow.
 
 ## Deployment Instructions
 
