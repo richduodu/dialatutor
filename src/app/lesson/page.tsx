@@ -23,14 +23,12 @@ export default function LessonPage() {
   const router = useRouter()
   const { toast } = useToast()
   
-  const [step, setStep] = useState(0) // 0: Selection, 1: Lesson, 2: Grading, 3: Minting, 4: Success
+  const [step, setStep] = useState(0) // 0: Selection, 1: Lesson, 2: Minting, 3: Success
   const [subject, setSubject] = useState<string>("")
   const [gradeLevel, setGradeLevel] = useState<string>("")
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isGrading, setIsGrading] = useState(false)
   const [mintingStatus, setMintingStatus] = useState<'idle' | 'minting' | 'completed'>('idle')
   const [txHash, setTxHash] = useState<string>("")
-  const [lastEvaluation, setLastEvaluation] = useState<any>(null)
   const [lesson, setLesson] = useState<{ id: string, title: string, content: string, expectedAnswer: string } | null>(null)
 
   const subjects = [
@@ -42,10 +40,7 @@ export default function LessonPage() {
     "General Knowledge"
   ]
 
-  const grades = [
-    "Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8",
-    "Grade 9", "Grade 10", "Grade 11", "Grade 12"
-  ]
+  const grades = Array.from({ length: 12 }, (_, i) => `Grade ${i + 1}`)
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -84,19 +79,12 @@ export default function LessonPage() {
     }
   }
 
-  const handleProcessingChange = (processing: boolean) => {
-    setIsGrading(processing)
-    if (processing) {
-      setStep(2)
-    }
-  }
-
   const handleEvaluationComplete = (evaluation: any) => {
-    if (!user || !lesson) return
-    setLastEvaluation(evaluation)
+    if (!user || !lesson || !evaluation.isCorrect) return
 
-    if (evaluation.isCorrect) {
-      setStep(3)
+    // Short delay to let the user see the "Success" result in VoiceRecorder
+    setTimeout(() => {
+      setStep(2) // Move to Minting step
       setMintingStatus('minting')
 
       const studentId = user.uid
@@ -161,11 +149,9 @@ export default function LessonPage() {
       setTimeout(() => {
         setTxHash(generatedTxHash)
         setMintingStatus('completed')
-        setStep(4)
+        setStep(3)
       }, 3000)
-    } else {
-      setStep(1)
-    }
+    }, 2000)
   }
 
   if (isUserLoading) {
@@ -259,7 +245,7 @@ export default function LessonPage() {
           <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex items-center justify-between gap-2">
               <Button variant="ghost" size="sm" onClick={() => setStep(0)} className="text-muted-foreground hover:text-primary">
-                ← Change Subject
+                ← Change Selection
               </Button>
               <Button 
                 variant="ghost" 
@@ -300,34 +286,11 @@ export default function LessonPage() {
               lessonContent={lesson.content} 
               expectedAnswer={lesson.expectedAnswer} 
               onComplete={handleEvaluationComplete}
-              onProcessingChange={handleProcessingChange}
             />
           </div>
         )}
 
         {step === 2 && (
-          <div className="text-center space-y-8 py-20 animate-in fade-in zoom-in-95 duration-300">
-            <div className="relative inline-block">
-              <div className="absolute inset-0 animate-pulse rounded-full bg-primary/20 scale-150" />
-              <div className="relative h-32 w-32 rounded-full bg-white shadow-2xl flex items-center justify-center">
-                <BrainCircuit className="h-16 w-16 text-primary animate-bounce" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-3xl font-bold font-headline">AI Tutor Grading...</h2>
-              <p className="text-muted-foreground">Analyzing your speech for comprehension and accuracy.</p>
-            </div>
-            <div className="max-w-xs mx-auto">
-              <div className="flex justify-center gap-1">
-                <div className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
-                <div className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
-                <div className="h-2 w-2 bg-primary rounded-full animate-bounce" />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
           <div className="text-center space-y-8 py-20 animate-in fade-in zoom-in-95 duration-300">
             <div className="relative inline-block">
               <div className="absolute inset-0 animate-ping rounded-full bg-accent/20" />
@@ -346,7 +309,7 @@ export default function LessonPage() {
           </div>
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <div className="space-y-8 animate-in zoom-in-95 duration-500">
             <Card className="border-none shadow-2xl bg-white overflow-hidden">
               <div className="h-2 bg-accent w-full" />
@@ -392,7 +355,7 @@ export default function LessonPage() {
                   <Button variant="outline" className="w-full rounded-full h-12" onClick={() => {
                     setStep(0)
                     setLesson(null)
-                    setLastEvaluation(null)
+                    setTxHash("")
                   }}>
                     Take Another Lesson
                   </Button>
