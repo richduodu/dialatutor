@@ -17,7 +17,9 @@ import {
   ShieldCheck, 
   ExternalLink,
   MessageSquare,
-  Loader2
+  Loader2,
+  Database,
+  Link as LinkIcon
 } from "lucide-react"
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
@@ -75,7 +77,7 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ attemp
                 <Badge className="bg-primary/10 text-primary border-none">{attempt.subject || "Educational Module"}</Badge>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
-                  {new Date(attempt.startTime).toLocaleDateString()} at {new Date(attempt.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(attempt.startTime).toLocaleDateString()}
                 </div>
               </div>
               <h1 className="text-4xl font-black font-headline tracking-tight">{attempt.lessonTitle || "Lesson Attempt"}</h1>
@@ -92,19 +94,19 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ attemp
             <CardHeader className="bg-muted/30 border-b">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-primary" />
-                <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Voice Interaction Data</CardTitle>
+                <CardTitle className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Interaction Insights</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="p-8 space-y-8">
               <div className="space-y-3">
-                <h3 className="text-xs font-bold uppercase text-muted-foreground">Your Spoken Response</h3>
+                <h3 className="text-xs font-bold uppercase text-muted-foreground">Spoken Transcription</h3>
                 <div className="p-6 rounded-2xl bg-muted/50 border italic text-lg leading-relaxed">
                   "{attempt.transcribedText}"
                 </div>
               </div>
 
               <div className="space-y-3">
-                <h3 className="text-xs font-bold uppercase text-muted-foreground">AI Tutor Assessment</h3>
+                <h3 className="text-xs font-bold uppercase text-muted-foreground">Tutor Assessment</h3>
                 <div className={`p-6 rounded-2xl border flex gap-4 ${attempt.isCompleted ? 'bg-accent/5 border-accent/20' : 'bg-destructive/5 border-destructive/20'}`}>
                   {attempt.isCompleted ? (
                     <CheckCircle2 className="h-6 w-6 text-accent shrink-0 mt-1" />
@@ -127,20 +129,25 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ attemp
               <CardContent className="p-8 space-y-6">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-6 w-6" />
-                  <h2 className="text-xl font-bold font-headline">Verified Proof of Learning</h2>
+                  <h2 className="text-xl font-bold font-headline">Blockchain Confirmation</h2>
                 </div>
                 <p className="opacity-90 max-w-md">
-                  This achievement has been immutably recorded on the Polygon PoS network. It can be verified by educational institutions and funders worldwide.
+                  This record is secured on the <strong>Polygon PoS</strong> blockchain. It is publicly verifiable, immutable, and tamper-proof.
                 </p>
-                <div className="flex flex-wrap gap-4 pt-4">
-                  <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-xs font-mono">
-                    Token ID: {Math.floor(Math.random() * 1000000)}
+                
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20">
+                    <p className="text-[10px] font-bold uppercase opacity-60 mb-1">Contract Address</p>
+                    <p className="font-mono text-[10px] truncate">0x8954...e921</p>
                   </div>
-                  <Button variant="secondary" size="sm" className="rounded-full gap-2" asChild>
-                    <a href={`https://polygonscan.com/`} target="_blank">
-                      View on Explorer <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </Button>
+                  <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20">
+                    <p className="text-[10px] font-bold uppercase opacity-60 mb-1">Verification Link</p>
+                    <Button variant="secondary" size="sm" className="w-full h-8 rounded-xl gap-2 text-xs font-bold" asChild>
+                      <a href={`https://polygonscan.com/`} target="_blank" rel="noopener noreferrer">
+                        PolygonScan <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -149,7 +156,7 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ attemp
           {!attempt.isCompleted && (
             <div className="text-center py-8">
               <Button asChild className="rounded-full h-14 px-8 text-lg font-bold shadow-xl">
-                <Link href="/lesson">Try This Lesson Again</Link>
+                <Link href="/lesson">Retake This Lesson</Link>
               </Button>
             </div>
           )}

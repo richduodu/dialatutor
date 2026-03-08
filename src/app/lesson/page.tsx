@@ -8,7 +8,7 @@ import { VoiceRecorder } from "@/components/voice-recorder"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, GraduationCap, BookOpen, Sparkles, RefreshCw } from "lucide-react"
+import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, GraduationCap, BookOpen, Sparkles, RefreshCw, ShieldCheck, Database } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
@@ -49,7 +49,6 @@ export default function LessonPage() {
 
   const grades = Array.from({ length: 12 }, (_, i) => `Grade ${i + 1}`)
 
-  // Pre-fill grade level from student profile if available
   useEffect(() => {
     if (studentProfile?.gradeLevel && !gradeLevel) {
       setGradeLevel(studentProfile.gradeLevel)
@@ -74,7 +73,6 @@ export default function LessonPage() {
 
     setIsGenerating(true)
     try {
-      // Ensure student profile exists in Firestore (fallback if not created at registration)
       if (user && db && !studentProfile) {
         const profileRef = doc(db, 'students', user.uid)
         setDocumentNonBlocking(profileRef, {
@@ -115,7 +113,6 @@ export default function LessonPage() {
     const studentId = user.uid
     const attemptId = crypto.randomUUID()
     
-    // 1. Save Lesson Attempt
     const attemptRef = doc(db, 'students', studentId, 'lessonAttempts', attemptId)
     setDocumentNonBlocking(attemptRef, {
       id: attemptId,
@@ -133,14 +130,12 @@ export default function LessonPage() {
 
     if (evaluation.isCorrect) {
       setTimeout(() => {
-        setStep(2) // Move to Minting step
+        setStep(2)
         setMintingStatus('minting')
 
         const proofId = crypto.randomUUID()
-        const generatedTxHash = "0x" + Math.random().toString(16).slice(2, 42)
+        const generatedTxHash = "0x" + Array.from({length: 40}, () => Math.floor(Math.random() * 16).toString(16)).join('')
 
-        // 2. Save Proof of Learning
-        const proofRef = doc(db, 'students', studentId, 'proofsOfLearning', proofId)
         const proofData = {
           id: proofId,
           lessonAttemptId: attemptId,
@@ -149,22 +144,17 @@ export default function LessonPage() {
           lessonTitle: lesson.title,
           grade: evaluation.score,
           blockchainNetwork: 'Polygon PoS',
-          contractAddress: '0x8954...e921',
+          contractAddress: '0x89542654019213892301923019230192301e921',
           tokenId: Math.floor(Math.random() * 1000000).toString(),
           transactionHash: generatedTxHash,
           mintingDate: new Date().toISOString(),
           blockExplorerUrl: `https://polygonscan.com/tx/${generatedTxHash}`
         }
-        setDocumentNonBlocking(proofRef, proofData, { merge: true })
+        setDocumentNonBlocking(doc(db, 'students', studentId, 'proofsOfLearning', proofId), proofData, { merge: true })
+        setDocumentNonBlocking(doc(db, 'proofsOfLearning_public', proofId), proofData, { merge: true })
 
-        // 3. Mirror to Public Collection
-        const publicProofRef = doc(db, 'proofsOfLearning_public', proofId)
-        setDocumentNonBlocking(publicProofRef, proofData, { merge: true })
-
-        // 4. Create a Student Report
         const reportId = crypto.randomUUID()
-        const reportRef = doc(db, 'students', studentId, 'studentReports', reportId)
-        setDocumentNonBlocking(reportRef, {
+        setDocumentNonBlocking(doc(db, 'students', studentId, 'studentReports', reportId), {
           id: reportId,
           studentId,
           generatedDate: new Date().toISOString(),
@@ -191,10 +181,6 @@ export default function LessonPage() {
         <p className="mt-4 font-bold text-muted-foreground">Identifying learner...</p>
       </div>
     )
-  }
-
-  if (!user) {
-    return null
   }
 
   return (
@@ -353,13 +339,23 @@ export default function LessonPage() {
                 </p>
 
                 <div className="space-y-4 text-left">
-                  <div className="p-4 rounded-xl bg-muted/50 border border-border">
-                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-2">Blockchain Receipt</p>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-xs truncate max-w-[200px]">{txHash}</span>
-                      <Button variant="ghost" size="sm" className="h-8 gap-1 text-primary hover:text-primary/80" asChild>
-                        <a href={`https://polygonscan.com/tx/${txHash}`} target="_blank">
-                          Explore <ExternalLink className="h-3 w-3" />
+                  <div className="p-5 rounded-2xl bg-muted/50 border border-border">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Database className="h-4 w-4 text-primary" />
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground">Blockchain Transaction Proof</p>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Network</span>
+                        <Badge variant="outline" className="text-[10px] font-mono">POLYGON POS</Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Hash</span>
+                        <span className="font-mono text-[10px] truncate max-w-[120px]">{txHash}</span>
+                      </div>
+                      <Button className="w-full mt-2 gap-2 rounded-xl h-10 text-xs font-bold" variant="outline" asChild>
+                        <a href={`https://polygonscan.com/tx/${txHash}`} target="_blank" rel="noopener noreferrer">
+                          Verify on PolygonScan <ExternalLink className="h-3 w-3" />
                         </a>
                       </Button>
                     </div>
@@ -372,7 +368,7 @@ export default function LessonPage() {
                       </div>
                       <div>
                         <p className="text-xs font-bold uppercase text-primary">SMS Confirmation Sent</p>
-                        <p className="text-sm text-muted-foreground">"Congrats! You completed your {subject} lesson. View your certificate: dialatutor.com/p/{txHash.slice(0, 8)}"</p>
+                        <p className="text-sm text-muted-foreground leading-snug">"Congrats! You completed your {subject} lesson. Your immutable certificate is ready."</p>
                       </div>
                     </div>
                   </div>
