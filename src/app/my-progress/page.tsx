@@ -97,7 +97,7 @@ export default function MyProgressPage() {
               <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-xl font-bold">No reports yet</p>
               <p className="text-muted-foreground mb-6">Complete your first lesson to see your evaluation.</p>
-              <Button asChild rounded-full>
+              <Button asChild className="rounded-full">
                 <a href="/lesson">Start Lesson #1</a>
               </Button>
             </div>
