@@ -1,16 +1,22 @@
 {
   "placeholderImages": [
     {
-      "id": "hero-bg",
-      "description": "Educational background pattern",
-      "imageUrl": "https://picsum.photos/seed/learn1/1200/600",
-      "imageHint": "education pattern"
+      "id": "hero-abstract",
+      "description": "Modern abstract educational background",
+      "imageUrl": "https://picsum.photos/seed/edu-modern/1200/800",
+      "imageHint": "abstract education"
     },
     {
-      "id": "funder-logo",
-      "description": "UNICEF Funder Logo",
-      "imageUrl": "https://picsum.photos/seed/unicef/200/80",
-      "imageHint": "organization logo"
+      "id": "student-voice",
+      "description": "Student using a simple mobile phone for learning",
+      "imageUrl": "https://picsum.photos/seed/voice-learn/600/400",
+      "imageHint": "student phone"
+    },
+    {
+      "id": "blockchain-verify",
+      "description": "Visual representation of secure blockchain data",
+      "imageUrl": "https://picsum.photos/seed/chain-data/600/400",
+      "imageHint": "blockchain network"
     }
   ]
 }
