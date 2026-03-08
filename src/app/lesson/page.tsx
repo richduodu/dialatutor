@@ -8,7 +8,7 @@ import { VoiceRecorder } from "@/components/voice-recorder"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ExternalLink, Loader2, Send, Smartphone } from "lucide-react"
+import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useUser, useFirestore } from "@/firebase"
 import { doc } from "firebase/firestore"
@@ -18,9 +18,11 @@ export default function LessonPage() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
   const router = useRouter()
-  const [step, setStep] = useState(1) // 1: Lesson, 2: Result/Minting, 3: Success
+  const [step, setStep] = useState(1) // 1: Lesson, 2: Grading, 3: Minting, 4: Success
+  const [isGrading, setIsGrading] = useState(false)
   const [mintingStatus, setMintingStatus] = useState<'idle' | 'minting' | 'completed'>('idle')
   const [txHash, setTxHash] = useState<string>("")
+  const [lastEvaluation, setLastEvaluation] = useState<any>(null)
 
   const lesson = {
     id: "multiplication-101",
@@ -35,33 +37,41 @@ export default function LessonPage() {
     }
   }, [user, isUserLoading, router])
 
+  const handleProcessingChange = (processing: boolean) => {
+    setIsGrading(processing)
+    if (processing) {
+      setStep(2)
+    }
+  }
+
   const handleEvaluationComplete = (evaluation: any) => {
     if (!user) return
-
-    setStep(2)
-    setMintingStatus('minting')
-
-    const studentId = user.uid
-    const attemptId = crypto.randomUUID()
-    const proofId = crypto.randomUUID()
-    const generatedTxHash = "0x" + Math.random().toString(16).slice(2, 42)
-
-    // 1. Save Lesson Attempt to Student Subcollection
-    const attemptRef = doc(db, 'students', studentId, 'lessonAttempts', attemptId)
-    setDocumentNonBlocking(attemptRef, {
-      id: attemptId,
-      studentId,
-      lessonId: lesson.id,
-      startTime: new Date().toISOString(),
-      endTime: new Date().toISOString(),
-      transcribedText: evaluation.transcription,
-      aiEvaluationResult: evaluation.evaluation,
-      grade: evaluation.score,
-      isCompleted: evaluation.isCorrect,
-      proofOfLearningId: evaluation.isCorrect ? proofId : null
-    }, { merge: true })
+    setLastEvaluation(evaluation)
 
     if (evaluation.isCorrect) {
+      setStep(3)
+      setMintingStatus('minting')
+
+      const studentId = user.uid
+      const attemptId = crypto.randomUUID()
+      const proofId = crypto.randomUUID()
+      const generatedTxHash = "0x" + Math.random().toString(16).slice(2, 42)
+
+      // 1. Save Lesson Attempt
+      const attemptRef = doc(db, 'students', studentId, 'lessonAttempts', attemptId)
+      setDocumentNonBlocking(attemptRef, {
+        id: attemptId,
+        studentId,
+        lessonId: lesson.id,
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        transcribedText: evaluation.transcription,
+        aiEvaluationResult: evaluation.evaluation,
+        grade: evaluation.score,
+        isCompleted: evaluation.isCorrect,
+        proofOfLearningId: proofId
+      }, { merge: true })
+
       // 2. Save Proof of Learning
       const proofRef = doc(db, 'students', studentId, 'proofsOfLearning', proofId)
       const proofData = {
@@ -69,8 +79,8 @@ export default function LessonPage() {
         lessonAttemptId: attemptId,
         studentId,
         lessonId: lesson.id,
-        lessonTitle: lesson.title, // Denormalized for dashboard
-        grade: evaluation.score,   // Denormalized for dashboard
+        lessonTitle: lesson.title,
+        grade: evaluation.score,
         blockchainNetwork: 'Polygon PoS',
         contractAddress: '0x8954...e921',
         tokenId: Math.floor(Math.random() * 1000000).toString(),
@@ -97,14 +107,17 @@ export default function LessonPage() {
         sentViaSms: true,
         sentDate: new Date().toISOString()
       }, { merge: true })
-    }
 
-    // Simulate Blockchain Minting UI delay
-    setTimeout(() => {
-      setTxHash(generatedTxHash)
-      setMintingStatus('completed')
-      setStep(3)
-    }, 3000)
+      // Simulate Blockchain Minting UI delay
+      setTimeout(() => {
+        setTxHash(generatedTxHash)
+        setMintingStatus('completed')
+        setStep(4)
+      }, 3000)
+    } else {
+      // If incorrect, show the feedback in the VoiceRecorder which is in Step 1
+      setStep(1)
+    }
   }
 
   if (isUserLoading) {
@@ -156,31 +169,54 @@ export default function LessonPage() {
             <VoiceRecorder 
               lessonContent={lesson.content} 
               expectedAnswer={lesson.expectedAnswer} 
-              onComplete={handleEvaluationComplete} 
+              onComplete={handleEvaluationComplete}
+              onProcessingChange={handleProcessingChange}
             />
           </div>
         )}
 
         {step === 2 && (
-          <div className="text-center space-y-8 py-20">
+          <div className="text-center space-y-8 py-20 animate-in fade-in zoom-in-95 duration-300">
             <div className="relative inline-block">
-              <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
-              <div className="relative h-24 w-24 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-                <Loader2 className="h-12 w-12 animate-spin" />
+              <div className="absolute inset-0 animate-pulse rounded-full bg-primary/20 scale-150" />
+              <div className="relative h-32 w-32 rounded-full bg-white shadow-2xl flex items-center justify-center">
+                <BrainCircuit className="h-16 w-16 text-primary animate-bounce" />
               </div>
             </div>
             <div className="space-y-2">
-              <h2 className="text-3xl font-bold font-headline">Minting Proof of Learning</h2>
-              <p className="text-muted-foreground">Interacting with Polygon PoS Mainnet (Gasless)</p>
+              <h2 className="text-3xl font-bold font-headline">AI Tutor Grading...</h2>
+              <p className="text-muted-foreground">Analyzing your speech for comprehension and accuracy.</p>
             </div>
             <div className="max-w-xs mx-auto">
-              <Progress value={66} className="h-2" />
-              <p className="text-[10px] uppercase font-bold mt-2 text-muted-foreground">Transaction pending...</p>
+              <div className="flex justify-center gap-1">
+                <div className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <div className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <div className="h-2 w-2 bg-primary rounded-full animate-bounce" />
+              </div>
             </div>
           </div>
         )}
 
         {step === 3 && (
+          <div className="text-center space-y-8 py-20 animate-in fade-in zoom-in-95 duration-300">
+            <div className="relative inline-block">
+              <div className="absolute inset-0 animate-ping rounded-full bg-accent/20" />
+              <div className="relative h-24 w-24 rounded-full bg-accent flex items-center justify-center text-accent-foreground shadow-xl">
+                <Loader2 className="h-12 w-12 animate-spin" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold font-headline">Minting Proof of Learning</h2>
+              <p className="text-muted-foreground">Securing your achievement on the Polygon PoS Mainnet.</p>
+            </div>
+            <div className="max-w-xs mx-auto">
+              <Progress value={66} className="h-2" />
+              <p className="text-[10px] uppercase font-bold mt-2 text-muted-foreground">Transaction broadcasted...</p>
+            </div>
+          </div>
+        )}
+
+        {step === 4 && (
           <div className="space-y-8 animate-in zoom-in-95 duration-500">
             <Card className="border-none shadow-2xl bg-white overflow-hidden">
               <div className="h-2 bg-accent w-full" />
@@ -223,7 +259,10 @@ export default function LessonPage() {
                   <Button className="w-full rounded-full h-12 text-lg shadow-lg" asChild>
                     <a href="/my-progress">View My Progress</a>
                   </Button>
-                  <Button variant="outline" className="w-full rounded-full h-12" onClick={() => setStep(1)}>
+                  <Button variant="outline" className="w-full rounded-full h-12" onClick={() => {
+                    setStep(1)
+                    setLastEvaluation(null)
+                  }}>
                     Take Another Lesson
                   </Button>
                 </div>

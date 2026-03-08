@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Mic, Square, Loader2, CheckCircle2, AlertCircle, RefreshCcw } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -10,9 +11,10 @@ interface VoiceRecorderProps {
   lessonContent: string
   expectedAnswer: string
   onComplete: (data: any) => void
+  onProcessingChange?: (isProcessing: boolean) => void
 }
 
-export function VoiceRecorder({ lessonContent, expectedAnswer, onComplete }: VoiceRecorderProps) {
+export function VoiceRecorder({ lessonContent, expectedAnswer, onComplete, onProcessingChange }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [result, setResult] = useState<any>(null)
@@ -60,6 +62,7 @@ export function VoiceRecorder({ lessonContent, expectedAnswer, onComplete }: Voi
 
   const processAudio = async (blob: Blob) => {
     setIsProcessing(true)
+    onProcessingChange?.(true)
     try {
       const reader = new FileReader()
       reader.readAsDataURL(blob)
@@ -73,18 +76,18 @@ export function VoiceRecorder({ lessonContent, expectedAnswer, onComplete }: Voi
         })
 
         setResult(evaluation)
-        if (evaluation.isCorrect) {
-          onComplete(evaluation)
-        }
+        setIsProcessing(false)
+        onProcessingChange?.(false)
+        onComplete(evaluation)
       }
     } catch (error) {
+      setIsProcessing(false)
+      onProcessingChange?.(false)
       toast({
         title: "Processing Failed",
         description: "There was an error analyzing your answer. Please try again.",
         variant: "destructive"
       })
-    } finally {
-      setIsProcessing(false)
     }
   }
 
@@ -93,6 +96,7 @@ export function VoiceRecorder({ lessonContent, expectedAnswer, onComplete }: Voi
     setAudioURL(null)
     setIsRecording(false)
     setIsProcessing(false)
+    onProcessingChange?.(false)
   }
 
   return (
