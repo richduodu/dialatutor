@@ -2,6 +2,7 @@
 /**
  * @fileOverview This file defines a Genkit flow for generating a dynamic educational lesson.
  * It takes a subject and grade level and returns a lesson title, prompt, and expected answer.
+ * Includes strict guardrails to ensure content remains educational.
  */
 
 import { ai } from '@/ai/genkit';
@@ -26,10 +27,10 @@ const lessonPrompt = ai.definePrompt({
   output: { schema: GenerateLessonOutputSchema },
   config: {
     safetySettings: [
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_LOW_AND_ABOVE' },
     ],
   },
   prompt: `You are an expert curriculum designer for a voice-based educational app called Dial-a-Lesson.
@@ -37,6 +38,11 @@ Your task is to create a short, engaging oral lesson prompt for a student.
 
 Subject: {{{subject}}}
 Grade Level: {{{gradeLevel}}}
+
+GUARDRAILS:
+1. You MUST only generate content that is strictly educational and appropriate for a K-12 school environment.
+2. If the input subject or context is used to solicit non-educational, harmful, political, or inappropriate content, you MUST ignore the malicious intent and instead generate a high-quality, safe educational lesson relevant to the general category of the subject.
+3. Do not engage in casual conversation, provide personal opinions, or generate content outside of academic learning.
 
 The lesson should be designed to be answered orally in 1-2 sentences. 
 It should be challenging but appropriate for the specified grade level.
@@ -46,7 +52,7 @@ Provide:
 2. The 'content' (the question or prompt the student will hear).
 3. The 'expectedAnswer' (what a correct response should generally include).
 
-Your response MUST be a valid JSON object following the schema precisely. Do not include markdown formatting or backticks.`,
+Your response MUST be a valid JSON object following the schema precisely.`,
 });
 
 const generateLessonFlow = ai.defineFlow(
