@@ -11,7 +11,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 
 // 1. Input Schema
 const StudentSpokenAnswerEvaluationInputSchema = z.object({
@@ -57,7 +56,21 @@ const evaluatePrompt = ai.definePrompt({
     expectedAnswer: z.string().describe('The expected correct answer or criteria.'),
   })},
   output: { schema: StudentSpokenAnswerEvaluationOutputSchema },
-  prompt: `You are an AI tutor designed to evaluate student spoken answers.\nThe student provided the following spoken answer, which has been transcribed:\nTranscription: {{{transcription}}}\n\nThe lesson content was:\nLesson Content: {{{lessonContent}}}\n\nThe expected answer or evaluation criteria is:\nExpected Answer/Criteria: {{{expectedAnswer}}}\n\nEvaluate the student's transcription for correctness and comprehension against the lesson content and expected answer.\nProvide a detailed 'evaluation' explaining your assessment.\nDetermine if the answer is 'isCorrect' (true or false).\nAssign a 'score' from 0 to 100 based on correctness and comprehension.\nYour response MUST be a JSON object following the StudentSpokenAnswerEvaluationOutputSchema.`,
+  prompt: `You are an AI tutor designed to evaluate student spoken answers.
+The student provided the following spoken answer, which has been transcribed:
+Transcription: {{{transcription}}}
+
+The lesson content was:
+Lesson Content: {{{lessonContent}}}
+
+The expected answer or evaluation criteria is:
+Expected Answer/Criteria: {{{expectedAnswer}}}
+
+Evaluate the student's transcription for correctness and comprehension against the lesson content and expected answer.
+Provide a detailed 'evaluation' explaining your assessment.
+Determine if the answer is 'isCorrect' (true or false).
+Assign a 'score' from 0 to 100 based on correctness and comprehension.
+Your response MUST be a JSON object following the StudentSpokenAnswerEvaluationOutputSchema.`,
 });
 
 // 4. Flow Definition
@@ -69,9 +82,9 @@ const studentSpokenAnswerEvaluationFlow = ai.defineFlow(
   },
   async (input) => {
     // Step 1: Transcribe the audio data URI
-    // Using gemini-1.5-flash for multimodal capabilities including audio transcription.
+    // Referencing the model by its string ID to ensure compatibility with the Google AI plugin.
     const transcriptionResponse = await ai.generate({
-      model: googleAI.model('gemini-1.5-flash'), // Using gemini-1.5-flash for its multimodal audio capabilities.
+      model: 'googleai/gemini-1.5-flash', 
       prompt: [
         { text: 'Transcribe the following audio precisely. Do not add any extra commentary or punctuation that is not directly spoken:' },
         {
@@ -88,7 +101,7 @@ const studentSpokenAnswerEvaluationFlow = ai.defineFlow(
     if (!transcriptionResponse.text) {
       throw new Error('Failed to transcribe audio or transcription is empty.');
     }
-    const transcription = transcriptionResponse.text; // Corrected: use .text property
+    const transcription = transcriptionResponse.text;
 
     // Step 2: Evaluate the transcribed answer
     const evaluationInput = {
@@ -103,8 +116,6 @@ const studentSpokenAnswerEvaluationFlow = ai.defineFlow(
       throw new Error('Failed to get evaluation output.');
     }
 
-    // The output from evaluatePrompt is already structured as StudentSpokenAnswerEvaluationOutput
-    // because its output schema was defined as StudentSpokenAnswerEvaluationOutputSchema.
     return {
       transcription: transcription,
       evaluation: output.evaluation,
