@@ -8,11 +8,11 @@ import { VoiceRecorder } from "@/components/voice-recorder"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, AlertCircle } from "lucide-react"
+import { CheckCircle, ExternalLink, Loader2, Send, Smartphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useUser, useFirestore, useMemoFirebase } from "@/firebase"
-import { collection, doc } from "firebase/firestore"
-import { addDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
+import { useUser, useFirestore } from "@/firebase"
+import { doc } from "firebase/firestore"
+import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 
 export default function LessonPage() {
   const { user, isUserLoading } = useUser()
@@ -69,6 +69,8 @@ export default function LessonPage() {
         lessonAttemptId: attemptId,
         studentId,
         lessonId: lesson.id,
+        lessonTitle: lesson.title, // Denormalized for dashboard
+        grade: evaluation.score,   // Denormalized for dashboard
         blockchainNetwork: 'Polygon PoS',
         contractAddress: '0x8954...e921',
         tokenId: Math.floor(Math.random() * 1000000).toString(),
