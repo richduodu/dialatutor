@@ -82,9 +82,9 @@ const studentSpokenAnswerEvaluationFlow = ai.defineFlow(
   },
   async (input) => {
     // Step 1: Transcribe the audio data URI
-    // Referencing the model by its string ID to ensure compatibility with the Google AI plugin.
+    // Using gemini-2.5-flash for multimodal capabilities including audio transcription.
     const transcriptionResponse = await ai.generate({
-      model: 'googleai/gemini-1.5-flash', 
+      model: 'googleai/gemini-2.5-flash', 
       prompt: [
         { text: 'Transcribe the following audio precisely. Do not add any extra commentary or punctuation that is not directly spoken:' },
         {
