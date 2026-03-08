@@ -12,66 +12,33 @@ Dial A Tutor is a voice-first educational platform designed to bridge the digita
 - **Impact Verifier Dashboard:** A public ledger for funders and NGOs to audit educational outcomes in real-time.
 - **Universal Accessibility:** Designed to be accessible via simple mobile phones (simulated through the web interface).
 
-## Backend & SMS Architecture
+## SMS Integration (Twilio)
 
-The student interaction model is designed to be "asynchronous-first" to handle spotty connectivity.
+The platform includes a server-side **Genkit Flow** (`notifyStudentFlow`) that handles SMS dispatching upon lesson completion.
 
-1. **Phone-Based Identity:** Students authenticate using their phone numbers.
-2. **IVR Simulation:** The web interface simulates an IVR call where the AI "speaks" the lesson and the student "speaks" back.
-3. **Backend Notifications (Server Actions):** 
-    - Upon lesson completion, a `notifyStudentFlow` (Genkit Flow) is triggered on the server.
-    - This backend action acts as the equivalent of a Firebase Cloud Function, handling the logic for dispatching an automated SMS.
-    - **Current State:** The dispatch logic is implemented as a server-side action with simulated Twilio integration for demonstration purposes.
-4. **Offline Synchronization:** Achievements are cached locally via Firestore. Once the device syncs with the cloud, the backend trigger is activated automatically.
+### Local Configuration
+Add your credentials to your `.env.local` file:
+```env
+TWILIO_ACCOUNT_SID=your_sid_here
+TWILIO_AUTH_TOKEN=your_auth_token_here
+TWILIO_PHONE_NUMBER=your_twilio_number_here
+```
+If these variables are missing, the system automatically defaults to **Simulation Mode**, logging the message content to the console without consuming Twilio credits.
+
+### Production Configuration (Firebase App Hosting)
+1. Go to the [Firebase Console](https://console.firebase.google.com/).
+2. Navigate to **App Hosting** and select your backend.
+3. Under **Secrets**, add the `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER` as environment variables.
+4. Redeploy your application for the changes to take effect.
 
 ## Tech Stack
 
 - **Framework:** [Next.js 15 (App Router)](https://nextjs.org/)
 - **Styling:** [Tailwind CSS](https://tailwindcss.com/) & [ShadCN UI](https://ui.shadcn.com/)
 - **Backend/Database:** [Firebase Firestore](https://firebase.google.com/products/firestore)
-- **Authentication:** [Firebase Authentication](https://firebase.google.com/products/auth) (Anonymous & Phone simulation)
+- **Authentication:** [Firebase Authentication](https://firebase.google.com/products/auth) (Phone + PIN model)
 - **AI/LLM:** [Genkit](https://firebase.google.com/docs/genkit) with Google Gemini 2.0 Flash
 - **Deployment:** [Firebase App Hosting](https://firebase.google.com/products/app-hosting)
-
-## Local Development
-
-1. **Clone the repository:**
-   ```bash
-   git clone <your-repo-url>
-   cd dial-a-tutor
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Environment Variables:**
-   Create a `.env.local` file in the root directory and add your Google AI API Key:
-   ```env
-   GOOGLE_GENAI_API_KEY=your_api_key_here
-   ```
-
-4. **Run the development server:**
-   ```bash
-   npm run dev
-   ```
-   Open [http://localhost:9002](http://localhost:9002) in your browser.
-
-## Deployment Instructions
-
-### 1. Firebase Setup
-- Go to the [Firebase Console](https://console.firebase.google.com/).
-- Create a new project.
-- **Enable Authentication:** Activate "Anonymous" sign-in.
-- **Enable Firestore:** Create a database.
-
-### 2. Deploy via Firebase App Hosting
-Firebase App Hosting is the recommended way to deploy this Next.js 15 application.
-
-1. **Connect your GitHub Repository:** In the Firebase Console, navigate to **App Hosting** and connect your repo.
-2. **Configure Environment Variables:** Add `GOOGLE_GENAI_API_KEY` as a secret.
-3. **Deploy:** Firebase will automatically detect the Next.js build and deploy your application.
 
 ---
 
