@@ -8,7 +8,7 @@ import { VoiceRecorder } from "@/components/voice-recorder"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, BookOpen, Sparkles, RefreshCw, Database, WifiOff, Wifi, Info } from "lucide-react"
+import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, BookOpen, Sparkles, RefreshCw, Database, WifiOff, Wifi, Info, Link as LinkIcon, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -360,7 +360,7 @@ export default function LessonPage() {
               lessonContent={lesson.content} 
               expectedAnswer={lesson.expectedAnswer} 
               onComplete={handleEvaluationComplete}
-              isOfflineMode={isOfflineMode}
+              isDemoMode={isOfflineMode}
             />
           </div>
         )}
@@ -370,7 +370,7 @@ export default function LessonPage() {
             <div className="relative inline-block">
               <div className="absolute inset-0 animate-ping rounded-full bg-accent/20" />
               <div className="relative h-24 w-24 rounded-full bg-accent flex items-center justify-center text-accent-foreground shadow-xl">
-                <Loader2 className="h-12 w-12 animate-spin" />
+                <ShieldCheck className="h-12 w-12 animate-pulse" />
               </div>
             </div>
             <div className="space-y-2">

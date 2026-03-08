@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, Search, Globe, Loader2, Database, Info, ShieldAlert } from "lucide-react"
+import { ExternalLink, Search, Globe, Loader2, Database, Info, ShieldAlert, Link as LinkIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, limit } from "firebase/firestore"

@@ -23,13 +23,20 @@ Add your credentials to your `.env.local` file (or as Secrets in Firebase App Ho
 
 *If these are missing, the system defaults to **Simulation Mode**, logging messages to the console.*
 
-### Blockchain Integration (Polygon)
-The "Minting" of Proof of Learning tokens is currently **simulated**.
-- **Current State:** Records are written to a public, read-only Firestore collection to demonstrate transparency and immutability.
-- **Production Migration:** To move to a live blockchain (e.g., Polygon Amoy or Mainnet), you would need to:
-  1. Add a Polygon RPC URL (via Alchemy or Infura).
-  2. Add a `MINTER_PRIVATE_KEY` to your environment secrets.
-  3. Update the `notifyStudentFlow` to trigger an on-chain transaction using a library like `ethers.js` or `viem`.
+### Blockchain Integration (Polygon Amoy)
+The "Minting" of Proof of Learning tokens is currently **simulated** for ease of demonstration. 
+- **Current State:** Records are written to a public, read-only Firestore collection (`proofsOfLearning_public`) which acts as an off-chain immutable ledger.
+- **Real Testnet Verification:** The UI generates valid-looking Ethereum transaction hashes and links directly to **Polygon Amoy Scan** (AmoyScan). Note that these links will show "Not Found" on the real explorer until live minting is enabled.
+
+#### Moving to a Live Blockchain
+To transition from simulation to a live Polygon deployment:
+1. **Choose a Library:** Install `ethers.js` or `viem`.
+2. **Provider Setup:** Get an RPC URL from [Alchemy](https://www.alchemy.com/) or [Infura](https://www.infura.io/).
+3. **Smart Contract:** Deploy an ERC-721 or ERC-1155 "Proof of Learning" contract to Polygon Amoy.
+4. **Backend Flow:** Update `notifyStudentFlow` to:
+   - Instantiate a Wallet using a `MINTER_PRIVATE_KEY` stored in your environment secrets.
+   - Call the `mint` function on your deployed smart contract.
+   - Store the *real* returned transaction hash in Firestore.
 
 ## Tech Stack
 
