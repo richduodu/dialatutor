@@ -60,6 +60,18 @@ export default function LessonPage() {
 
     setIsGenerating(true)
     try {
+      // Ensure student profile exists in Firestore
+      if (user && db) {
+        const studentRef = doc(db, 'students', user.uid)
+        setDocumentNonBlocking(studentRef, {
+          id: user.uid,
+          externalAuthId: user.uid,
+          phoneNumber: user.phoneNumber || "Simulated Phone",
+          name: user.displayName || `Learner ${user.uid.slice(0, 5)}`,
+          createdAt: new Date().toISOString()
+        }, { merge: true })
+      }
+
       const generatedLesson = await generateLesson({ subject, gradeLevel })
       setLesson({
         id: crypto.randomUUID(),
@@ -80,78 +92,80 @@ export default function LessonPage() {
   }
 
   const handleEvaluationComplete = (evaluation: any) => {
-    if (!user || !lesson || !evaluation.isCorrect) return
+    if (!user || !lesson) return
 
-    // Short delay to let the user see the "Success" result in VoiceRecorder
-    setTimeout(() => {
-      setStep(2) // Move to Minting step
-      setMintingStatus('minting')
+    const studentId = user.uid
+    const attemptId = crypto.randomUUID()
+    
+    // 1. Save Lesson Attempt (Always save the attempt regardless of correctness)
+    const attemptRef = doc(db, 'students', studentId, 'lessonAttempts', attemptId)
+    setDocumentNonBlocking(attemptRef, {
+      id: attemptId,
+      studentId,
+      lessonId: lesson.id,
+      lessonTitle: lesson.title,
+      subject: subject,
+      startTime: new Date().toISOString(),
+      endTime: new Date().toISOString(),
+      transcribedText: evaluation.transcription,
+      aiEvaluationResult: evaluation.evaluation,
+      grade: evaluation.score,
+      isCompleted: evaluation.isCorrect,
+    }, { merge: true })
 
-      const studentId = user.uid
-      const attemptId = crypto.randomUUID()
-      const proofId = crypto.randomUUID()
-      const generatedTxHash = "0x" + Math.random().toString(16).slice(2, 42)
-
-      // 1. Save Lesson Attempt
-      const attemptRef = doc(db, 'students', studentId, 'lessonAttempts', attemptId)
-      setDocumentNonBlocking(attemptRef, {
-        id: attemptId,
-        studentId,
-        lessonId: lesson.id,
-        lessonTitle: lesson.title,
-        subject: subject,
-        startTime: new Date().toISOString(),
-        endTime: new Date().toISOString(),
-        transcribedText: evaluation.transcription,
-        aiEvaluationResult: evaluation.evaluation,
-        grade: evaluation.score,
-        isCompleted: evaluation.isCorrect,
-        proofOfLearningId: proofId
-      }, { merge: true })
-
-      // 2. Save Proof of Learning
-      const proofRef = doc(db, 'students', studentId, 'proofsOfLearning', proofId)
-      const proofData = {
-        id: proofId,
-        lessonAttemptId: attemptId,
-        studentId,
-        lessonId: lesson.id,
-        lessonTitle: lesson.title,
-        grade: evaluation.score,
-        blockchainNetwork: 'Polygon PoS',
-        contractAddress: '0x8954...e921',
-        tokenId: Math.floor(Math.random() * 1000000).toString(),
-        transactionHash: generatedTxHash,
-        mintingDate: new Date().toISOString(),
-        blockExplorerUrl: `https://polygonscan.com/tx/${generatedTxHash}`
-      }
-      setDocumentNonBlocking(proofRef, proofData, { merge: true })
-
-      // 3. Mirror to Public Collection
-      const publicProofRef = doc(db, 'proofsOfLearning_public', proofId)
-      setDocumentNonBlocking(publicProofRef, proofData, { merge: true })
-
-      // 4. Create a Student Report
-      const reportId = crypto.randomUUID()
-      const reportRef = doc(db, 'students', studentId, 'studentReports', reportId)
-      setDocumentNonBlocking(reportRef, {
-        id: reportId,
-        studentId,
-        generatedDate: new Date().toISOString(),
-        reportContent: `Successfully completed: ${lesson.title}. Evaluation: ${evaluation.evaluation}`,
-        lessonAttemptIds: [attemptId],
-        overallGrade: evaluation.score,
-        sentViaSms: true,
-        sentDate: new Date().toISOString()
-      }, { merge: true })
-
-      // Simulate Blockchain Minting UI delay
+    // Only proceed to Minting and Reporting if the answer was correct
+    if (evaluation.isCorrect) {
       setTimeout(() => {
-        setTxHash(generatedTxHash)
-        setMintingStatus('completed')
-        setStep(3)
-      }, 3000)
-    }, 2000)
+        setStep(2) // Move to Minting step
+        setMintingStatus('minting')
+
+        const proofId = crypto.randomUUID()
+        const generatedTxHash = "0x" + Math.random().toString(16).slice(2, 42)
+
+        // 2. Save Proof of Learning
+        const proofRef = doc(db, 'students', studentId, 'proofsOfLearning', proofId)
+        const proofData = {
+          id: proofId,
+          lessonAttemptId: attemptId,
+          studentId,
+          lessonId: lesson.id,
+          lessonTitle: lesson.title,
+          grade: evaluation.score,
+          blockchainNetwork: 'Polygon PoS',
+          contractAddress: '0x8954...e921',
+          tokenId: Math.floor(Math.random() * 1000000).toString(),
+          transactionHash: generatedTxHash,
+          mintingDate: new Date().toISOString(),
+          blockExplorerUrl: `https://polygonscan.com/tx/${generatedTxHash}`
+        }
+        setDocumentNonBlocking(proofRef, proofData, { merge: true })
+
+        // 3. Mirror to Public Collection
+        const publicProofRef = doc(db, 'proofsOfLearning_public', proofId)
+        setDocumentNonBlocking(publicProofRef, proofData, { merge: true })
+
+        // 4. Create a Student Report
+        const reportId = crypto.randomUUID()
+        const reportRef = doc(db, 'students', studentId, 'studentReports', reportId)
+        setDocumentNonBlocking(reportRef, {
+          id: reportId,
+          studentId,
+          generatedDate: new Date().toISOString(),
+          reportContent: `Successfully completed: ${lesson.title}. Evaluation: ${evaluation.evaluation}`,
+          lessonAttemptIds: [attemptId],
+          overallGrade: evaluation.score,
+          sentViaSms: true,
+          sentDate: new Date().toISOString()
+        }, { merge: true })
+
+        // Simulate Blockchain Minting UI delay
+        setTimeout(() => {
+          setTxHash(generatedTxHash)
+          setMintingStatus('completed')
+          setStep(3)
+        }, 3000)
+      }, 2000)
+    }
   }
 
   if (isUserLoading) {
