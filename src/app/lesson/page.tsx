@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -7,7 +8,7 @@ import { VoiceRecorder } from "@/components/voice-recorder"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, GraduationCap, BookOpen, Sparkles } from "lucide-react"
+import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, GraduationCap, BookOpen, Sparkles, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useUser, useFirestore } from "@/firebase"
@@ -256,9 +257,19 @@ export default function LessonPage() {
 
         {step === 1 && lesson && (
           <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-2">
               <Button variant="ghost" size="sm" onClick={() => setStep(0)} className="text-muted-foreground hover:text-primary">
                 ← Change Subject
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleStartLesson} 
+                disabled={isGenerating}
+                className="text-muted-foreground hover:text-primary gap-2"
+              >
+                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                New Question
               </Button>
             </div>
             <Card className="border-none shadow-xl bg-primary text-primary-foreground overflow-hidden relative">
