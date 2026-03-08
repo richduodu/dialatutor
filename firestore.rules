@@ -1,10 +1,9 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * VOICE2LEARN PROOF - SECURITY RULES DOCUMENTATION
+     * DIAL A TUTOR - SECURITY RULES DOCUMENTATION
      *
      * Core Philosophy:
      * This ruleset enforces a strict path-based ownership model for all student-specific data.
@@ -18,18 +17,6 @@ service cloud.firestore {
      * - /students/{studentId}/studentReports: Progress summaries sent via SMS/Email.
      * - /lessons: Global, read-only educational content.
      * - /proofsOfLearning_public: A flattened, public collection for verification.
-     *
-     * Key Security Decisions:
-     * 1. Denormalization for Authorization: Every document nested under a student path 
-     *    includes a 'studentId' field. Rules validate that this field matches the 
-     *    authenticated UID and the path segment to ensure relational integrity.
-     * 2. Structural Segregation: Public verification data is mirrored to a top-level 
-     *    collection (/proofsOfLearning_public) to allow broad access without 
-     *    exposing private student subcollections.
-     * 3. Immutability: Critical relational fields (like studentId) are made 
-     *    immutable after creation to prevent data from being moved between accounts.
-     * 4. Ownership for Writes: All write operations are protected by the isOwner() 
-     *    helper, ensuring only the authenticated student can manage their data.
      */
 
     // --- HELPER FUNCTIONS ---
@@ -51,10 +38,9 @@ service cloud.firestore {
 
     /**
      * @description Rules for student profile management. 
-     * Allows authenticated users to list (for phone existence checks) but only owners to get details.
      */
     match /students/{studentId} {
-      allow list: if isSignedIn(); // Required for checkUserExists queries
+      allow list: if isSignedIn();
       allow get: if isOwner(studentId);
       allow create: if isOwner(studentId) && request.resource.data.id == studentId;
       allow update, delete: if isExistingOwner(studentId);
@@ -91,7 +77,7 @@ service cloud.firestore {
     }
 
     /**
-     * @description Global educational content. Read-only for all authenticated users.
+     * @description Global educational content.
      */
     match /lessons/{lessonId} {
       allow get, list: if isSignedIn();

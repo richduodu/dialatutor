@@ -32,7 +32,6 @@ export default function LoginPage() {
 
   const grades = Array.from({ length: 12 }, (_, i) => `Grade ${i + 1}`)
 
-  // Redirect if already logged in and not in the middle of a submission
   useEffect(() => {
     if (!isUserLoading && user && !isSubmitting) {
       router.push("/lesson")
@@ -62,12 +61,9 @@ export default function LoginPage() {
     setIsSubmitting(true)
     
     try {
-      // 1. Sign in anonymously FIRST to establish a context for checking existence
-      // Firestore rules require isSignedIn() for collection queries.
       const userCredential = await signInAnonymously(auth)
       const newUser = userCredential.user
 
-      // 2. Check if the phone number is already registered
       const exists = await checkUserExists(phoneNumber)
 
       if (mode === 'login' && !exists) {
@@ -91,7 +87,6 @@ export default function LoginPage() {
         return
       }
 
-      // 3. Handle Profile Creation for new users
       if (mode === 'register' && db) {
         const studentRef = doc(db, 'students', newUser.uid)
         await setDoc(studentRef, {
@@ -105,7 +100,7 @@ export default function LoginPage() {
         
         toast({
           title: "Account Created!",
-          description: `Welcome to Voice2Learn, ${fullName}.`,
+          description: `Welcome to Dial A Tutor, ${fullName}.`,
         })
       } else {
         toast({
@@ -114,7 +109,6 @@ export default function LoginPage() {
         })
       }
 
-      // After successful profile creation/verification, navigate
       router.push("/lesson")
     } catch (error: any) {
       console.error("Auth error:", error)
@@ -149,7 +143,7 @@ export default function LoginPage() {
             <CardDescription>
               {mode === 'login' 
                 ? 'Enter your phone number to continue your learning journey.' 
-                : 'Join Dial-a-Lesson and start earning blockchain-backed proofs.'}
+                : 'Join Dial A Tutor and start earning blockchain-backed proofs.'}
             </CardDescription>
           </CardHeader>
           <CardContent>

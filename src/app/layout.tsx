@@ -5,7 +5,7 @@ import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'Dial A Tutor | Immutable Proof of Learning',
-  description: 'A high-fidelity prototype for oral lessons with blockchain-backed proofs.',
+  description: 'A voice-first educational platform for oral lessons with blockchain-backed proofs.',
 };
 
 export default function RootLayout({

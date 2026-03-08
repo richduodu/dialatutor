@@ -4,7 +4,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Student",
       "type": "object",
-      "description": "Represents a student user of the Voice2Learn Proof application, who takes lessons and receives proofs of learning and reports.",
+      "description": "Represents a student user of the Dial A Tutor application, who takes lessons and receives proofs of learning and reports.",
       "properties": {
         "id": {
           "type": "string",
