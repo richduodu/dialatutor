@@ -1,0 +1,133 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * VOICE2LEARN PROOF - SECURITY RULES DOCUMENTATION
+     *
+     * Core Philosophy:
+     * This ruleset enforces a strict path-based ownership model for all student-specific data.
+     * The primary goal is to ensure that students can only access and modify their own 
+     * educational progress, while allowing for public verification of learning outcomes.
+     *
+     * Data Structure:
+     * - /students/{studentId}: Root student profiles.
+     * - /students/{studentId}/lessonAttempts: Individual lesson responses and AI grades.
+     * - /students/{studentId}/proofsOfLearning: Private blockchain-linked certificates.
+     * - /students/{studentId}/studentReports: Progress summaries sent via SMS/Email.
+     * - /lessons: Global, read-only educational content.
+     * - /proofsOfLearning_public: A flattened, public collection for verification.
+     *
+     * Key Security Decisions:
+     * 1. Denormalization for Authorization: Every document nested under a student path 
+     *    includes a 'studentId' field. Rules validate that this field matches the 
+     *    authenticated UID and the path segment to ensure relational integrity.
+     * 2. Structural Segregation: Public verification data is mirrored to a top-level 
+     *    collection (/proofsOfLearning_public) to allow broad access without 
+     *    exposing private student subcollections.
+     * 3. Immutability: Critical relational fields (like studentId) are made 
+     *    immutable after creation to prevent data from being moved between accounts.
+     * 4. Ownership for Writes: All write operations are protected by the isOwner() 
+     *    helper, ensuring only the authenticated student can manage their data.
+     */
+
+    // --- HELPER FUNCTIONS ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Combines ownership check with existence check for updates and deletes
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Rules for student profile management. Allows users to manage their own profile.
+     * @path /students/{studentId}
+     * @allow (create) if auth.uid == studentId
+     * @deny (get) if auth.uid != studentId
+     * @principle Validates that the document ID matches the authenticated user's UID.
+     */
+    match /students/{studentId} {
+      allow get, list: if isOwner(studentId);
+      allow create: if isOwner(studentId) && request.resource.data.id == studentId;
+      allow update, delete: if isExistingOwner(studentId);
+
+      /**
+       * @description Records of specific lesson attempts, including audio transcripts and grades.
+       * @path /students/{studentId}/lessonAttempts/{attemptId}
+       * @allow (create) if auth.uid == studentId && data.studentId == studentId
+       * @deny (list) if auth.uid != studentId
+       * @principle Path-based ownership combined with relational integrity validation.
+       */
+      match /lessonAttempts/{attemptId} {
+        allow get, list: if isOwner(studentId);
+        allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
+        allow update: if isExistingOwner(studentId) && request.resource.data.studentId == resource.data.studentId;
+        allow delete: if isExistingOwner(studentId);
+      }
+
+      /**
+       * @description Private copies of Proof of Learning tokens earned by the student.
+       * @path /students/{studentId}/proofsOfLearning/{proofId}
+       * @allow (get) if auth.uid == studentId
+       * @deny (create) if auth.uid != studentId
+       * @principle Ensures private academic credentials remain restricted to the owner.
+       */
+      match /proofsOfLearning/{proofId} {
+        allow get, list: if isOwner(studentId);
+        allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
+        allow update: if isExistingOwner(studentId) && request.resource.data.studentId == resource.data.studentId;
+        allow delete: if isExistingOwner(studentId);
+      }
+
+      /**
+       * @description Comprehensive progress reports generated for the student.
+       * @path /students/{studentId}/studentReports/{reportId}
+       * @allow (list) if auth.uid == studentId
+       * @deny (update) if studentId field is changed
+       * @principle Secures sensitive progress summaries and grades via path-based ownership.
+       */
+      match /studentReports/{reportId} {
+        allow get, list: if isOwner(studentId);
+        allow create: if isOwner(studentId) && request.resource.data.studentId == studentId;
+        allow update: if isExistingOwner(studentId) && request.resource.data.studentId == resource.data.studentId;
+        allow delete: if isExistingOwner(studentId);
+      }
+    }
+
+    /**
+     * @description Global educational content. Read-only for all authenticated users.
+     * @path /lessons/{lessonId}
+     * @allow (get, list) if isSignedIn()
+     * @deny (create, update, delete) for all users (Admin managed via Backend/CLI)
+     * @principle Provides broad read access for content while preventing student modification.
+     */
+    match /lessons/{lessonId} {
+      allow get, list: if isSignedIn();
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Publicly accessible collection of minted Proofs for third-party verification.
+     * @path /proofsOfLearning_public/{proofId}
+     * @allow (get, list) if true (Publicly readable)
+     * @allow (create) if auth.uid == request.resource.data.studentId
+     * @deny (update) if auth.uid does not match existing studentId
+     * @principle Uses Public Read with Owner-Only Writes pattern for verifiable credentials.
+     */
+    match /proofsOfLearning_public/{proofId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.studentId;
+      allow update: if isExistingOwner(resource.data.studentId) && request.resource.data.studentId == resource.data.studentId;
+      allow delete: if isExistingOwner(resource.data.studentId);
+    }
+  }
+}
