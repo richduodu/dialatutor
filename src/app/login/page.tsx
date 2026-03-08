@@ -9,17 +9,17 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Smartphone, LogIn, UserPlus, Loader2, User, Lock } from "lucide-react"
+import { Smartphone, LogIn, UserPlus, Loader2, User, Lock, HelpCircle, ArrowLeft, ShieldAlert } from "lucide-react"
 import { useAuth, useUser, useFirestore } from "@/firebase"
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
-import { doc, setDoc, getDoc } from "firebase/firestore"
+import { doc, setDoc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 
 import 'react-phone-number-input/style.css'
 import PhoneInput from 'react-phone-number-input'
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login')
   const [phoneNumber, setPhoneNumber] = useState<string | undefined>("")
   const [pin, setPin] = useState("")
   const [fullName, setFullName] = useState("")
@@ -57,7 +57,7 @@ export default function LoginPage() {
       return
     }
 
-    if (pin.length < 4) {
+    if (mode !== 'forgot' && pin.length < 4) {
       toast({
         title: "PIN Too Short",
         description: "Your security PIN must be at least 4 digits.",
@@ -90,15 +90,15 @@ export default function LoginPage() {
           title: "Account Created!",
           description: `Welcome to Dial A Tutor, ${fullName}.`,
         })
-      } else {
+        router.push("/lesson")
+      } else if (mode === 'login') {
         await signInWithEmailAndPassword(auth, email, pin)
         toast({
           title: "Logged In",
           description: "Resuming your learning journey.",
         })
+        router.push("/lesson")
       }
-
-      router.push("/lesson")
     } catch (error: any) {
       console.error("Auth error:", error)
       let message = "Please check your credentials and try again."
@@ -136,113 +136,166 @@ export default function LoginPage() {
         <Card className="w-full max-w-md border-none shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="h-2 bg-primary w-full" />
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-black font-headline">
-              {mode === 'login' ? 'Student Access' : 'Create Account'}
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-2xl font-black font-headline">
+                {mode === 'login' ? 'Student Access' : mode === 'register' ? 'Create Account' : 'Recover Access'}
+              </CardTitle>
+              {mode === 'forgot' && (
+                <Button variant="ghost" size="icon" onClick={() => setMode('login')}>
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+              )}
+            </div>
             <CardDescription>
               {mode === 'login' 
                 ? 'Enter your phone and PIN to continue your learning journey.' 
-                : 'Join Dial A Tutor and start earning blockchain-backed proofs.'}
+                : mode === 'register'
+                ? 'Join Dial A Tutor and start earning blockchain-backed proofs.'
+                : 'Lost your security PIN? Follow the steps below.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleAuth} className="space-y-4">
-              {mode === 'register' && (
+            {mode !== 'forgot' ? (
+              <form onSubmit={handleAuth} className="space-y-4">
+                {mode === 'register' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        id="name" 
+                        placeholder="Jane Doe" 
+                        className="pl-10 h-11 rounded-xl"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label>Phone Number</Label>
+                  <div className="phone-input-container">
+                     <PhoneInput
+                      placeholder="Enter phone number"
+                      value={phoneNumber}
+                      onChange={setPhoneNumber}
+                      defaultCountry="GH"
+                      disabled={isSubmitting}
+                      className="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="pin">Security PIN</Label>
+                    {mode === 'login' && (
+                      <button 
+                        type="button" 
+                        onClick={() => setMode('forgot')}
+                        className="text-[10px] font-bold text-primary hover:underline"
+                      >
+                        Forgot PIN?
+                      </button>
+                    )}
+                  </div>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
-                      id="name" 
-                      placeholder="Jane Doe" 
+                      id="pin" 
+                      type="password"
+                      inputMode="numeric"
+                      placeholder="4-6 digit PIN" 
                       className="pl-10 h-11 rounded-xl"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
+                      value={pin}
+                      onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       required
                     />
                   </div>
                 </div>
-              )}
 
-              <div className="space-y-2">
-                <Label>Phone Number</Label>
-                <div className="phone-input-container">
-                   <PhoneInput
-                    placeholder="Enter phone number"
-                    value={phoneNumber}
-                    onChange={setPhoneNumber}
-                    defaultCountry="GH"
-                    disabled={isSubmitting}
-                    className="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="pin">Security PIN</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    id="pin" 
-                    type="password"
-                    inputMode="numeric"
-                    placeholder="4-digit PIN" 
-                    className="pl-10 h-11 rounded-xl"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    required
-                  />
-                </div>
-              </div>
-
-              {mode === 'register' && (
-                <div className="space-y-2">
-                  <Label htmlFor="grade">Your Grade Level</Label>
-                  <Select value={grade} onValueChange={setGrade} required>
-                    <SelectTrigger className="h-11 rounded-xl">
-                      <SelectValue placeholder="Select your grade..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {grades.map((g) => (
-                        <SelectItem key={g} value={g}>{g}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <Button type="submit" className="w-full gap-2 rounded-full h-12 shadow-lg mt-2" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : mode === 'login' ? (
-                  <LogIn className="h-4 w-4" />
-                ) : (
-                  <UserPlus className="h-4 w-4" />
-                )} 
-                {isSubmitting ? "Connecting..." : mode === 'login' ? "Start Learning" : "Register & Start"}
-              </Button>
-            </form>
-            
-            <div className="mt-8 pt-6 border-t text-center">
-              <p className="text-xs text-muted-foreground mb-4">
-                {mode === 'login' ? "First time here?" : "Already have an account?"}
-              </p>
-              <Button 
-                variant="outline" 
-                className="w-full gap-2 rounded-full h-12" 
-                onClick={() => {
-                  setMode(mode === 'login' ? 'register' : 'login')
-                  setPin("")
-                }}
-                disabled={isSubmitting}
-              >
-                {mode === 'login' ? (
-                  <><UserPlus className="h-4 w-4" /> Create New Account</>
-                ) : (
-                  <><LogIn className="h-4 w-4" /> Already Registered? Login</>
+                {mode === 'register' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="grade">Your Grade Level</Label>
+                    <Select value={grade} onValueChange={setGrade} required>
+                      <SelectTrigger className="h-11 rounded-xl">
+                        <SelectValue placeholder="Select your grade..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {grades.map((g) => (
+                          <SelectItem key={g} value={g}>{g}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 )}
-              </Button>
-            </div>
+
+                <Button type="submit" className="w-full gap-2 rounded-full h-12 shadow-lg mt-2" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : mode === 'login' ? (
+                    <LogIn className="h-4 w-4" />
+                  ) : (
+                    <UserPlus className="h-4 w-4" />
+                  )} 
+                  {isSubmitting ? "Connecting..." : mode === 'login' ? "Start Learning" : "Register & Start"}
+                </Button>
+              </form>
+            ) : (
+              <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
+                <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10 flex flex-col items-center text-center">
+                  <ShieldAlert className="h-12 w-12 text-primary mb-4" />
+                  <h3 className="font-bold text-lg mb-2">Manual Verification Required</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    To maintain the integrity of your **Proof of Learning** history, security PINs cannot be reset automatically via this interface.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex gap-4 items-start">
+                    <div className="h-6 w-6 rounded-full bg-accent/20 text-accent flex items-center justify-center shrink-0 font-bold text-xs">1</div>
+                    <p className="text-sm">Locate your local **Dial A Tutor Coordinator** or community learning center.</p>
+                  </div>
+                  <div className="flex gap-4 items-start">
+                    <div className="h-6 w-6 rounded-full bg-accent/20 text-accent flex items-center justify-center shrink-0 font-bold text-xs">2</div>
+                    <p className="text-sm">Provide your registered phone number for identity verification.</p>
+                  </div>
+                  <div className="flex gap-4 items-start">
+                    <div className="h-6 w-6 rounded-full bg-accent/20 text-accent flex items-center justify-center shrink-0 font-bold text-xs">3</div>
+                    <p className="text-sm">Once verified, they will provide you with a temporary PIN to regain access.</p>
+                  </div>
+                </div>
+
+                <Button variant="outline" className="w-full rounded-full h-12" onClick={() => setMode('login')}>
+                  Back to Login
+                </Button>
+              </div>
+            )}
+            
+            {mode !== 'forgot' && (
+              <div className="mt-8 pt-6 border-t text-center">
+                <p className="text-xs text-muted-foreground mb-4">
+                  {mode === 'login' ? "First time here?" : "Already have an account?"}
+                </p>
+                <Button 
+                  variant="outline" 
+                  className="w-full gap-2 rounded-full h-12" 
+                  onClick={() => {
+                    setMode(mode === 'login' ? 'register' : 'login')
+                    setPin("")
+                  }}
+                  disabled={isSubmitting}
+                >
+                  {mode === 'login' ? (
+                    <><UserPlus className="h-4 w-4" /> Create New Account</>
+                  ) : (
+                    <><LogIn className="h-4 w-4" /> Already Registered? Login</>
+                  )}
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>
