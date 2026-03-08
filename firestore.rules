@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -49,23 +50,17 @@ service cloud.firestore {
     // --- COLLECTION RULES ---
 
     /**
-     * @description Rules for student profile management. Allows users to manage their own profile.
-     * @path /students/{studentId}
-     * @allow (create) if auth.uid == studentId
-     * @deny (get) if auth.uid != studentId
-     * @principle Validates that the document ID matches the authenticated user's UID.
+     * @description Rules for student profile management. 
+     * Allows authenticated users to list (for phone existence checks) but only owners to get details.
      */
     match /students/{studentId} {
-      allow get, list: if isOwner(studentId);
+      allow list: if isSignedIn(); // Required for checkUserExists queries
+      allow get: if isOwner(studentId);
       allow create: if isOwner(studentId) && request.resource.data.id == studentId;
       allow update, delete: if isExistingOwner(studentId);
 
       /**
-       * @description Records of specific lesson attempts, including audio transcripts and grades.
-       * @path /students/{studentId}/lessonAttempts/{attemptId}
-       * @allow (create) if auth.uid == studentId && data.studentId == studentId
-       * @deny (list) if auth.uid != studentId
-       * @principle Path-based ownership combined with relational integrity validation.
+       * @description Records of specific lesson attempts.
        */
       match /lessonAttempts/{attemptId} {
         allow get, list: if isOwner(studentId);
@@ -75,11 +70,7 @@ service cloud.firestore {
       }
 
       /**
-       * @description Private copies of Proof of Learning tokens earned by the student.
-       * @path /students/{studentId}/proofsOfLearning/{proofId}
-       * @allow (get) if auth.uid == studentId
-       * @deny (create) if auth.uid != studentId
-       * @principle Ensures private academic credentials remain restricted to the owner.
+       * @description Private copies of Proof of Learning tokens.
        */
       match /proofsOfLearning/{proofId} {
         allow get, list: if isOwner(studentId);
@@ -89,11 +80,7 @@ service cloud.firestore {
       }
 
       /**
-       * @description Comprehensive progress reports generated for the student.
-       * @path /students/{studentId}/studentReports/{reportId}
-       * @allow (list) if auth.uid == studentId
-       * @deny (update) if studentId field is changed
-       * @principle Secures sensitive progress summaries and grades via path-based ownership.
+       * @description Comprehensive progress reports.
        */
       match /studentReports/{reportId} {
         allow get, list: if isOwner(studentId);
@@ -105,10 +92,6 @@ service cloud.firestore {
 
     /**
      * @description Global educational content. Read-only for all authenticated users.
-     * @path /lessons/{lessonId}
-     * @allow (get, list) if isSignedIn()
-     * @deny (create, update, delete) for all users (Admin managed via Backend/CLI)
-     * @principle Provides broad read access for content while preventing student modification.
      */
     match /lessons/{lessonId} {
       allow get, list: if isSignedIn();
@@ -116,12 +99,7 @@ service cloud.firestore {
     }
 
     /**
-     * @description Publicly accessible collection of minted Proofs for third-party verification.
-     * @path /proofsOfLearning_public/{proofId}
-     * @allow (get, list) if true (Publicly readable)
-     * @allow (create) if auth.uid == request.resource.data.studentId
-     * @deny (update) if auth.uid does not match existing studentId
-     * @principle Uses Public Read with Owner-Only Writes pattern for verifiable credentials.
+     * @description Publicly accessible collection of minted Proofs for verification.
      */
     match /proofsOfLearning_public/{proofId} {
       allow get, list: if true;

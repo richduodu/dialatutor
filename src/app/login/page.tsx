@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Smartphone, LogIn, UserPlus, Loader2, User, Globe, AlertCircle } from "lucide-react"
 import { useAuth, useUser, useFirestore } from "@/firebase"
-import { signInAnonymously } from "firebase/auth"
+import { signInAnonymously, signOut } from "firebase/auth"
 import { collection, query, where, getDocs, doc, setDoc } from "firebase/firestore"
 import { useToast } from "@/hooks/use-toast"
 
@@ -33,12 +33,12 @@ export default function LoginPage() {
 
   const grades = Array.from({ length: 12 }, (_, i) => `Grade ${i + 1}`)
 
-  // Redirect if already logged in
+  // Redirect if already logged in and not in the middle of a submission
   useEffect(() => {
-    if (!isUserLoading && user) {
+    if (!isUserLoading && user && !isSubmitting) {
       router.push("/lesson")
     }
-  }, [user, isUserLoading, router])
+  }, [user, isUserLoading, router, isSubmitting])
 
   const checkUserExists = async (phone: string) => {
     if (!db) return null
@@ -63,6 +63,12 @@ export default function LoginPage() {
     setIsSubmitting(true)
     
     try {
+      // 1. Sign in anonymously FIRST to establish a context for checking existence
+      // Firestore rules require isSignedIn() for collection queries.
+      const userCredential = await signInAnonymously(auth)
+      const newUser = userCredential.user
+
+      // 2. Check if the phone number is already registered
       const exists = await checkUserExists(phoneNumber)
 
       if (mode === 'login' && !exists) {
@@ -86,12 +92,8 @@ export default function LoginPage() {
         return
       }
 
-      // In this prototype, we use anonymous sign-in to simulate the phone-based identity
-      const userCredential = await signInAnonymously(auth)
-      const newUser = userCredential.user
-
+      // 3. Handle Profile Creation for new users
       if (mode === 'register' && db) {
-        // Save the student profile immediately after registration
         const studentRef = doc(db, 'students', newUser.uid)
         await setDoc(studentRef, {
           id: newUser.uid,
@@ -112,18 +114,22 @@ export default function LoginPage() {
           description: "Resuming your learning journey.",
         })
       }
-    } catch (error) {
+
+      // After successful profile creation/verification, navigate
+      router.push("/lesson")
+    } catch (error: any) {
       console.error("Auth error:", error)
       toast({
         title: "Authentication Failed",
-        description: "Please try again later.",
+        description: error.message || "Please try again later.",
         variant: "destructive"
       })
+    } finally {
       setIsSubmitting(false)
     }
   }
 
-  if (isUserLoading || (user && !isSubmitting)) {
+  if (isUserLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-background items-center justify-center">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
