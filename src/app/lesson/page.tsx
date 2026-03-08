@@ -18,6 +18,7 @@ import { doc } from "firebase/firestore"
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 import { generateLesson } from "@/ai/flows/generate-lesson-flow"
 import { notifyStudent } from "@/ai/flows/notify-student-flow"
+import { mintProof } from "@/ai/flows/mint-proof-flow"
 import { useToast } from "@/hooks/use-toast"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -146,23 +147,20 @@ export default function LessonPage() {
     }, { merge: true })
 
     if (evaluation.isCorrect) {
-      // 2. Trigger Backend Notification (Server Action)
-      if (!isOfflineMode) {
-        notifyStudent({
-          phoneNumber: studentProfile?.phoneNumber || "Simulated Phone",
+      // 2. Trigger UI Transition to Minting
+      setStep(2)
+      setMintingStatus('minting')
+
+      try {
+        // 3. Trigger Live Blockchain Minting (Server Action)
+        const mintResult = await mintProof({
+          studentId,
           lessonTitle: lesson.title,
-          score: evaluation.score
-        }).catch(err => console.error("Notification Flow failed:", err));
-      }
+          grade: evaluation.score
+        })
 
-      // 3. UI Transition to Minting
-      setTimeout(() => {
-        setStep(2)
-        setMintingStatus('minting')
-
+        // 4. Save Proof Data
         const proofId = crypto.randomUUID()
-        const generatedTxHash = "0x" + Array.from({length: 40}, () => Math.floor(Math.random() * 16).toString(16)).join('')
-
         const proofData = {
           id: proofId,
           lessonAttemptId: attemptId,
@@ -170,35 +168,42 @@ export default function LessonPage() {
           lessonId: lesson.id,
           lessonTitle: lesson.title,
           grade: evaluation.score,
-          blockchainNetwork: 'Polygon Amoy Testnet',
+          blockchainNetwork: mintResult.network,
           contractAddress: '0x89542654019213892301923019230192301e921',
-          tokenId: Math.floor(Math.random() * 1000000).toString(),
-          transactionHash: generatedTxHash,
+          tokenId: mintResult.tokenId,
+          transactionHash: mintResult.transactionHash,
           mintingDate: new Date().toISOString(),
-          blockExplorerUrl: `https://amoy.polygonscan.com/tx/${generatedTxHash}`,
-          isOfflineMode: isOfflineMode
+          blockExplorerUrl: `https://amoy.polygonscan.com/tx/${mintResult.transactionHash}`,
+          isOfflineMode: isOfflineMode,
+          mode: mintResult.mode
         }
+        
         setDocumentNonBlocking(doc(db, 'students', studentId, 'proofsOfLearning', proofId), proofData, { merge: true })
         setDocumentNonBlocking(doc(db, 'proofsOfLearning_public', proofId), proofData, { merge: true })
 
-        const reportId = crypto.randomUUID()
-        setDocumentNonBlocking(doc(db, 'students', studentId, 'studentReports', reportId), {
-          id: reportId,
-          studentId,
-          generatedDate: new Date().toISOString(),
-          reportContent: `Successfully completed: ${lesson.title}. Evaluation: ${evaluation.evaluation}`,
-          lessonAttemptIds: [attemptId],
-          overallGrade: evaluation.score,
-          sentViaSms: !isOfflineMode,
-          sentDate: new Date().toISOString()
-        }, { merge: true })
+        // 5. Trigger Backend Notification (Server Action)
+        if (!isOfflineMode) {
+          notifyStudent({
+            phoneNumber: studentProfile?.phoneNumber || "Simulated Phone",
+            lessonTitle: lesson.title,
+            score: evaluation.score
+          }).catch(err => console.error("Notification Flow failed:", err));
+        }
 
-        setTimeout(() => {
-          setTxHash(generatedTxHash)
-          setMintingStatus('completed')
-          setStep(3)
-        }, 3000)
-      }, 2000)
+        // 6. Final UI Step
+        setTxHash(mintResult.transactionHash)
+        setMintingStatus('completed')
+        setStep(3)
+
+      } catch (err) {
+        console.error("Minting Flow failed:", err)
+        toast({
+          title: "Blockchain Minting Failed",
+          description: "We couldn't record your achievement on-chain. Please try again later.",
+          variant: "destructive"
+        })
+        setStep(1) // Return to lesson
+      }
     }
   }
 
@@ -380,7 +385,7 @@ export default function LessonPage() {
             <div className="max-w-xs mx-auto">
               <Progress value={66} className="h-2" />
               <p className="text-[10px] uppercase font-bold mt-2 text-muted-foreground">
-                {isOfflineMode ? "Queuing for background sync..." : "Transaction broadcasted..."}
+                {isOfflineMode ? "Queuing for background sync..." : "Broadcasting Transaction..."}
               </p>
             </div>
           </div>
@@ -453,15 +458,6 @@ export default function LessonPage() {
                       </div>
                     </div>
                   </div>
-
-                  {!isOfflineMode && (
-                    <Alert className="bg-muted/50 border-none">
-                      <Info className="h-4 w-4" />
-                      <AlertDescription className="text-[10px] italic text-muted-foreground">
-                        Note: For this version, backend SMS dispatch is simulated via a Next.js Server Action. Production requires a live Twilio SID/Token.
-                      </AlertDescription>
-                    </Alert>
-                  )}
                 </div>
 
                 <div className="mt-10 flex flex-col gap-3">
