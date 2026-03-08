@@ -1,10 +1,11 @@
+
 "use client"
 
 import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Smartphone, BookOpen, Clock, Send, Loader2, Award } from "lucide-react"
+import { Smartphone, BookOpen, Clock, Send, Loader2, Award, ChevronRight } from "lucide-react"
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy } from "firebase/firestore"
 import { useRouter } from "next/navigation"
@@ -66,11 +67,12 @@ export default function MyProgressPage() {
             </div>
             <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border shadow-sm">
               <Award className="h-5 w-5 text-accent" />
-              <span className="font-bold">{attempts?.length || 0} Lessons Mastered</span>
+              <span className="font-bold">{attempts?.filter(a => a.isCompleted).length || 0} Lessons Mastered</span>
             </div>
           </div>
         </header>
 
+        <h2 className="text-2xl font-bold mb-6 font-headline">Recent Progress Reports</h2>
         <div className="grid md:grid-cols-3 gap-8 mb-12">
           {reports && reports.length > 0 ? (
             reports.slice(0, 3).map((report) => (
@@ -98,53 +100,62 @@ export default function MyProgressPage() {
               </Card>
             ))
           ) : (
-            <div className="md:col-span-3 text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed">
+            <div className="md:col-span-3 text-center py-12 bg-muted/20 rounded-3xl border-2 border-dashed">
               <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-xl font-bold">No reports yet</p>
-              <p className="text-muted-foreground mb-6">Complete your first lesson to see your evaluation.</p>
-              <Button asChild className="rounded-full">
-                <Link href="/lesson">Start Lesson #1</Link>
+              <p className="text-lg font-bold">No reports yet</p>
+              <p className="text-sm text-muted-foreground mb-6">Reports are generated after successful lesson completions.</p>
+              <Button asChild variant="outline" className="rounded-full">
+                <Link href="/lesson">Take a Lesson</Link>
               </Button>
             </div>
           )}
         </div>
 
-        <h2 className="text-2xl font-bold mb-6 font-headline">Recent Attempts</h2>
+        <h2 className="text-2xl font-bold mb-6 font-headline">Detailed Attempts</h2>
         <div className="space-y-4">
           {attempts?.map((attempt) => (
-            <Card key={attempt.id} className="border-none shadow-md hover:shadow-lg transition-shadow bg-card">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                      <BookOpen className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="outline" className="text-[10px] py-0">{attempt.subject || "General"}</Badge>
+            <Link key={attempt.id} href={`/my-progress/attempt/${attempt.id}`}>
+              <Card className="border-none shadow-md hover:shadow-lg transition-all bg-card cursor-pointer group mb-4">
+                <CardContent className="p-6">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                        <BookOpen className="h-6 w-6 text-primary" />
                       </div>
-                      <h3 className="font-bold text-lg">{attempt.lessonTitle || "Module Completion"}</h3>
-                      <p className="text-sm text-muted-foreground italic line-clamp-1">"{attempt.transcribedText}"</p>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline" className="text-[10px] py-0">{attempt.subject || "General"}</Badge>
+                          <span className="text-[10px] text-muted-foreground">{new Date(attempt.startTime).toLocaleDateString()}</span>
+                        </div>
+                        <h3 className="font-bold text-lg group-hover:text-primary transition-colors">{attempt.lessonTitle || "Module Completion"}</h3>
+                        <p className="text-sm text-muted-foreground italic line-clamp-1">"{attempt.transcribedText}"</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-2xl font-black text-primary">{attempt.grade}%</p>
+                        <p className="text-[10px] uppercase font-bold text-muted-foreground">Accuracy</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {attempt.isCompleted ? (
+                          <Badge className="bg-accent hover:bg-accent h-8 px-4 rounded-full">Completed</Badge>
+                        ) : (
+                          <Badge variant="destructive" className="h-8 px-4 rounded-full">Retake Required</Badge>
+                        )}
+                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-all translate-x-0 group-hover:translate-x-1" />
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-2xl font-black text-primary">{attempt.grade}%</p>
-                      <p className="text-[10px] uppercase font-bold text-muted-foreground">Accuracy</p>
-                    </div>
-                    {attempt.isCompleted ? (
-                      <Badge className="bg-accent hover:bg-accent h-8 px-4 rounded-full">Completed</Badge>
-                    ) : (
-                      <Badge variant="destructive" className="h-8 px-4 rounded-full">Retake Required</Badge>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
           {attempts?.length === 0 && (
-             <div className="text-center py-10 text-muted-foreground italic">
-                You haven't completed any lessons yet.
+             <div className="text-center py-20 bg-muted/10 rounded-3xl border-2 border-dashed">
+                <p className="text-muted-foreground italic">You haven't attempted any lessons yet.</p>
+                <Button asChild className="mt-4 rounded-full">
+                  <Link href="/lesson">Start First Lesson</Link>
+                </Button>
              </div>
           )}
         </div>
