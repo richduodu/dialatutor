@@ -1,8 +1,8 @@
 'use server';
 /**
  * @fileOverview This file defines a Genkit flow for evaluating a student's spoken answer.
- * It transcribes the audio input and then uses an AI model to evaluate the correctness
- * and comprehension of the transcribed answer against lesson content and expected answers.
+ * It uses a multimodal AI model to transcribe the audio and evaluate comprehension
+ * against lesson content in a single efficient step.
  *
  * - evaluateSpokenAnswer - A function that handles the spoken answer evaluation process.
  * - StudentSpokenAnswerEvaluationInput - The input type for the evaluateSpokenAnswer function.
@@ -47,29 +47,29 @@ export type StudentSpokenAnswerEvaluationOutput = z.infer<
   typeof StudentSpokenAnswerEvaluationOutputSchema
 >;
 
-// 3. Evaluation Prompt Definition
+// 3. Multimodal Evaluation Prompt Definition
+// Combining transcription and evaluation into one call to optimize quota and performance.
 const evaluatePrompt = ai.definePrompt({
   name: 'evaluateSpokenAnswerPrompt',
-  input: { schema: z.object({
-    transcription: z.string().describe('The student\'s transcribed spoken answer.'),
-    lessonContent: z.string().describe('The lesson content or context.'),
-    expectedAnswer: z.string().describe('The expected correct answer or criteria.'),
-  })},
+  input: { schema: StudentSpokenAnswerEvaluationInputSchema },
   output: { schema: StudentSpokenAnswerEvaluationOutputSchema },
   prompt: `You are an AI tutor designed to evaluate student spoken answers.
-The student provided the following spoken answer, which has been transcribed:
-Transcription: {{{transcription}}}
+The student provided an oral response to the following lesson.
 
-The lesson content was:
 Lesson Content: {{{lessonContent}}}
-
-The expected answer or evaluation criteria is:
 Expected Answer/Criteria: {{{expectedAnswer}}}
 
-Evaluate the student's transcription for correctness and comprehension against the lesson content and expected answer.
-Provide a detailed 'evaluation' explaining your assessment.
-Determine if the answer is 'isCorrect' (true or false).
-Assign a 'score' from 0 to 100 based on correctness and comprehension.
+First, transcribe the provided audio precisely. 
+Then, evaluate the transcription for correctness and comprehension against the lesson content and expected answer.
+
+Audio: {{media url=audioDataUri}}
+
+Evaluation instructions:
+- Provide a clear 'transcription' of exactly what the student said.
+- Provide a detailed 'evaluation' explaining your assessment and how they can improve.
+- Set 'isCorrect' to true if the answer demonstrates understanding and matches the criteria, false otherwise.
+- Assign a 'score' from 0 to 100 based on accuracy, vocabulary usage, and comprehension.
+
 Your response MUST be a JSON object following the StudentSpokenAnswerEvaluationOutputSchema.`,
 });
 
@@ -81,43 +81,15 @@ const studentSpokenAnswerEvaluationFlow = ai.defineFlow(
     outputSchema: StudentSpokenAnswerEvaluationOutputSchema,
   },
   async (input) => {
-    // Step 1: Transcribe the audio data URI
-    // Using gemini-2.5-flash for multimodal capabilities including audio transcription.
-    const transcriptionResponse = await ai.generate({
-      model: 'googleai/gemini-2.5-flash', 
-      prompt: [
-        { text: 'Transcribe the following audio precisely. Do not add any extra commentary or punctuation that is not directly spoken:' },
-        {
-          media: {
-            url: input.audioDataUri,
-          },
-        },
-      ],
-      config: {
-        maxOutputTokens: 2048,
-      }
-    });
-
-    if (!transcriptionResponse.text) {
-      throw new Error('Failed to transcribe audio or transcription is empty.');
-    }
-    const transcription = transcriptionResponse.text;
-
-    // Step 2: Evaluate the transcribed answer
-    const evaluationInput = {
-      transcription: transcription,
-      lessonContent: input.lessonContent,
-      expectedAnswer: input.expectedAnswer,
-    };
-
-    const { output } = await evaluatePrompt(evaluationInput);
+    // By using a single multimodal call, we reduce quota usage and latency.
+    const { output } = await evaluatePrompt(input);
 
     if (!output) {
-      throw new Error('Failed to get evaluation output.');
+      throw new Error('Failed to get evaluation output from AI tutor.');
     }
 
     return {
-      transcription: transcription,
+      transcription: output.transcription,
       evaluation: output.evaluation,
       isCorrect: output.isCorrect,
       score: output.score,
