@@ -59,7 +59,7 @@ export default function FunderDashboard() {
           </Card>
           <Card className="border-none shadow-xl">
             <CardHeader className="pb-2">
-              <CardDescription className="font-bold uppercase text-[10px]">Active Students</CardTitle>
+              <CardDescription className="font-bold uppercase text-[10px]">Active Students</CardDescription>
               <CardTitle className="text-4xl font-black">4,912</CardTitle>
             </CardHeader>
             <CardContent>
@@ -68,7 +68,7 @@ export default function FunderDashboard() {
           </Card>
           <Card className="border-none shadow-xl">
             <CardHeader className="pb-2">
-              <CardDescription className="font-bold uppercase text-[10px]">Avg Comprehension</CardTitle>
+              <CardDescription className="font-bold uppercase text-[10px]">Avg Comprehension</CardDescription>
               <CardTitle className="text-4xl font-black">89.4%</CardTitle>
             </CardHeader>
             <CardContent>
