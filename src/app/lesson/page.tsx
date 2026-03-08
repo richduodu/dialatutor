@@ -1,34 +1,116 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { VoiceRecorder } from "@/components/voice-recorder"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ExternalLink, Loader2, Send, Smartphone } from "lucide-react"
+import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useUser, useFirestore, useMemoFirebase } from "@/firebase"
+import { collection, doc } from "firebase/firestore"
+import { addDocumentNonBlocking, setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
 
 export default function LessonPage() {
+  const { user, isUserLoading } = useUser()
+  const db = useFirestore()
+  const router = useRouter()
   const [step, setStep] = useState(1) // 1: Lesson, 2: Result/Minting, 3: Success
   const [mintingStatus, setMintingStatus] = useState<'idle' | 'minting' | 'completed'>('idle')
   const [txHash, setTxHash] = useState<string>("")
 
   const lesson = {
+    id: "multiplication-101",
     title: "Basic Mathematics: Multiplication",
     content: "Explain why multiplying any number by zero results in zero. Use the concept of 'groups of items' in your explanation.",
     expectedAnswer: "Multiplying by zero means you have zero groups of a number, or groups with zero items in them. Either way, there is nothing in total."
   }
 
-  const handleEvaluationComplete = async (data: any) => {
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push("/login")
+    }
+  }, [user, isUserLoading, router])
+
+  const handleEvaluationComplete = (evaluation: any) => {
+    if (!user) return
+
     setStep(2)
     setMintingStatus('minting')
-    
-    // Simulate Blockchain Minting on Polygon
-    await new Promise(resolve => setTimeout(resolve, 3000))
-    setTxHash("0x" + Math.random().toString(16).slice(2, 42))
-    setMintingStatus('completed')
-    setStep(3)
+
+    const studentId = user.uid
+    const attemptId = crypto.randomUUID()
+    const proofId = crypto.randomUUID()
+    const generatedTxHash = "0x" + Math.random().toString(16).slice(2, 42)
+
+    // 1. Save Lesson Attempt to Student Subcollection
+    const attemptRef = doc(db, 'students', studentId, 'lessonAttempts', attemptId)
+    setDocumentNonBlocking(attemptRef, {
+      id: attemptId,
+      studentId,
+      lessonId: lesson.id,
+      startTime: new Date().toISOString(),
+      endTime: new Date().toISOString(),
+      transcribedText: evaluation.transcription,
+      aiEvaluationResult: evaluation.evaluation,
+      grade: evaluation.score,
+      isCompleted: evaluation.isCorrect,
+      proofOfLearningId: evaluation.isCorrect ? proofId : null
+    }, { merge: true })
+
+    if (evaluation.isCorrect) {
+      // 2. Save Proof of Learning
+      const proofRef = doc(db, 'students', studentId, 'proofsOfLearning', proofId)
+      const proofData = {
+        id: proofId,
+        lessonAttemptId: attemptId,
+        studentId,
+        lessonId: lesson.id,
+        blockchainNetwork: 'Polygon PoS',
+        contractAddress: '0x8954...e921',
+        tokenId: Math.floor(Math.random() * 1000000).toString(),
+        transactionHash: generatedTxHash,
+        mintingDate: new Date().toISOString(),
+        blockExplorerUrl: `https://polygonscan.com/tx/${generatedTxHash}`
+      }
+      setDocumentNonBlocking(proofRef, proofData, { merge: true })
+
+      // 3. Mirror to Public Collection
+      const publicProofRef = doc(db, 'proofsOfLearning_public', proofId)
+      setDocumentNonBlocking(publicProofRef, proofData, { merge: true })
+
+      // 4. Create a Student Report
+      const reportId = crypto.randomUUID()
+      const reportRef = doc(db, 'students', studentId, 'studentReports', reportId)
+      setDocumentNonBlocking(reportRef, {
+        id: reportId,
+        studentId,
+        generatedDate: new Date().toISOString(),
+        reportContent: `Successfully completed: ${lesson.title}. Evaluation: ${evaluation.evaluation}`,
+        lessonAttemptIds: [attemptId],
+        overallGrade: evaluation.score,
+        sentViaSms: true,
+        sentDate: new Date().toISOString()
+      }, { merge: true })
+    }
+
+    // Simulate Blockchain Minting UI delay
+    setTimeout(() => {
+      setTxHash(generatedTxHash)
+      setMintingStatus('completed')
+      setStep(3)
+    }, 3000)
+  }
+
+  if (isUserLoading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-background items-center justify-center">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 font-bold text-muted-foreground">Identifying learner...</p>
+      </div>
+    )
   }
 
   return (
@@ -41,7 +123,9 @@ export default function LessonPage() {
             <h1 className="text-3xl font-bold font-headline">Dial-a-Lesson</h1>
             <p className="text-muted-foreground">Unit 4: Mathematics Fundamentals</p>
           </div>
-          <Badge variant="outline" className="bg-white px-3 py-1 font-mono">ID: 48912</Badge>
+          <Badge variant="outline" className="bg-white px-3 py-1 font-mono uppercase">
+            Learner: {user?.uid.slice(0, 5)}
+          </Badge>
         </div>
 
         {step === 1 && (
@@ -130,7 +214,7 @@ export default function LessonPage() {
 
                 <div className="mt-10 flex flex-col gap-3">
                   <Button className="w-full rounded-full h-12 text-lg shadow-lg" asChild>
-                    <a href="/">Done</a>
+                    <a href="/my-progress">View My Progress</a>
                   </Button>
                   <Button variant="outline" className="w-full rounded-full h-12" onClick={() => setStep(1)}>
                     Take Another Lesson
