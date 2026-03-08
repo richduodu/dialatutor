@@ -3,7 +3,7 @@
 
 import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
-import { Mic, Square, Loader2, CheckCircle2, AlertCircle, RefreshCcw, BrainCircuit } from "lucide-react"
+import { Mic, Square, Loader2, CheckCircle2, AlertCircle, RefreshCcw, BrainCircuit, WifiOff } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { evaluateSpokenAnswer } from "@/ai/flows/student-spoken-answer-evaluation"
 
@@ -11,9 +11,10 @@ interface VoiceRecorderProps {
   lessonContent: string
   expectedAnswer: string
   onComplete: (data: any) => void
+  isDemoMode?: boolean
 }
 
-export function VoiceRecorder({ lessonContent, expectedAnswer, onComplete }: VoiceRecorderProps) {
+export function VoiceRecorder({ lessonContent, expectedAnswer, onComplete, isDemoMode = false }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [result, setResult] = useState<any>(null)
@@ -61,6 +62,23 @@ export function VoiceRecorder({ lessonContent, expectedAnswer, onComplete }: Voi
 
   const processAudio = async (blob: Blob) => {
     setIsProcessing(true)
+    
+    if (isDemoMode) {
+      // Offline Simulation Logic
+      setTimeout(() => {
+        const evaluation = {
+          transcription: "This is a simulated offline response for the educational lesson provided.",
+          evaluation: "The student demonstrated a basic understanding of the core concept in this simulated environment. Excellent clarity and vocabulary usage.",
+          isCorrect: true,
+          score: 95
+        }
+        setResult(evaluation)
+        setIsProcessing(false)
+        onComplete(evaluation)
+      }, 2500)
+      return
+    }
+
     try {
       const reader = new FileReader()
       reader.readAsDataURL(blob)
@@ -83,7 +101,7 @@ export function VoiceRecorder({ lessonContent, expectedAnswer, onComplete }: Voi
           toast({
             title: isQuotaError ? "AI Tutor is Busy" : "Evaluation Failed",
             description: isQuotaError 
-              ? "The AI tutor has reached its current limit. Please wait about a minute and try again." 
+              ? "The AI tutor has reached its current limit. Please wait about a minute and try again. Consider enabling 'Offline Demo Mode'." 
               : "There was an error analyzing your answer. Please try again.",
             variant: "destructive"
           })
@@ -110,7 +128,14 @@ export function VoiceRecorder({ lessonContent, expectedAnswer, onComplete }: Voi
     <div className="flex flex-col items-center gap-6 p-8 border-2 border-dashed rounded-3xl bg-muted/20 min-h-[300px] justify-center transition-all duration-300">
       {!result && !isProcessing && (
         <div className="text-center space-y-4 animate-in fade-in zoom-in-95 duration-300">
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Voice Input Simulation</p>
+          <div className="flex items-center justify-center gap-2">
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Voice Input Simulation</p>
+            {isDemoMode && (
+              <Badge variant="outline" className="text-[10px] bg-orange-100 text-orange-600 border-orange-200">
+                <WifiOff className="h-2 w-2 mr-1" /> Offline
+              </Badge>
+            )}
+          </div>
           <div className="flex flex-col items-center gap-4">
             {!isRecording ? (
               <Button 
@@ -146,7 +171,7 @@ export function VoiceRecorder({ lessonContent, expectedAnswer, onComplete }: Voi
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-xl font-bold font-headline">AI Tutor Grading...</p>
+            <p className="text-xl font-bold font-headline">{isDemoMode ? "Simulating Grading..." : "AI Tutor Grading..."}</p>
             <p className="text-muted-foreground">Analyzing your comprehension and speech patterns</p>
           </div>
         </div>

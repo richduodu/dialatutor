@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -7,9 +8,11 @@ import { VoiceRecorder } from "@/components/voice-recorder"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, BookOpen, Sparkles, RefreshCw, Database } from "lucide-react"
+import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, BookOpen, Sparkles, RefreshCw, Database, WifiOff, Wifi } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
@@ -26,6 +29,7 @@ export default function LessonPage() {
   const [subject, setSubject] = useState<string>("")
   const [gradeLevel, setGradeLevel] = useState<string>("")
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isDemoMode, setIsDemoMode] = useState(false)
   const [mintingStatus, setMintingStatus] = useState<'idle' | 'minting' | 'completed'>('idle')
   const [txHash, setTxHash] = useState<string>("")
   const [lesson, setLesson] = useState<{ id: string, title: string, content: string, expectedAnswer: string } | null>(null)
@@ -84,13 +88,24 @@ export default function LessonPage() {
         }, { merge: true })
       }
 
-      const generatedLesson = await generateLesson({ subject, gradeLevel })
-      setLesson({
-        id: crypto.randomUUID(),
-        title: generatedLesson.title,
-        content: generatedLesson.content,
-        expectedAnswer: generatedLesson.expectedAnswer
-      })
+      if (isDemoMode) {
+        // Simulate local generation delay
+        await new Promise(r => setTimeout(r, 1500))
+        setLesson({
+          id: crypto.randomUUID(),
+          title: `Intro to ${subject}`,
+          content: `Explain the fundamental concept of ${subject} for ${gradeLevel} students.`,
+          expectedAnswer: "A clear and concise explanation showing core understanding."
+        })
+      } else {
+        const generatedLesson = await generateLesson({ subject, gradeLevel })
+        setLesson({
+          id: crypto.randomUUID(),
+          title: generatedLesson.title,
+          content: generatedLesson.content,
+          expectedAnswer: generatedLesson.expectedAnswer
+        })
+      }
       setStep(1)
     } catch (error: any) {
       const isQuotaError = error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED');
@@ -191,14 +206,30 @@ export default function LessonPage() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-12 max-w-2xl">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold font-headline">Dial A Tutor</h1>
             <p className="text-muted-foreground">Personalized AI Oral Instruction</p>
           </div>
-          <Badge variant="outline" className="bg-white px-3 py-1 font-mono uppercase">
-            Learner: {studentProfile?.name || user?.uid.slice(0, 5)}
-          </Badge>
+          <div className="flex flex-col items-end gap-2">
+            <Badge variant="outline" className="bg-white px-3 py-1 font-mono uppercase">
+              Learner: {studentProfile?.name || user?.uid.slice(0, 5)}
+            </Badge>
+            {step === 0 && (
+              <div className="flex items-center space-x-2 bg-white/50 px-3 py-1.5 rounded-full border border-dashed">
+                <Label htmlFor="demo-mode" className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1 cursor-pointer">
+                  {isDemoMode ? <WifiOff className="h-3 w-3 text-orange-500" /> : <Wifi className="h-3 w-3 text-green-500" />}
+                  Offline Demo
+                </Label>
+                <Switch 
+                  id="demo-mode" 
+                  checked={isDemoMode} 
+                  onCheckedChange={setIsDemoMode} 
+                  className="scale-75"
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         {step === 0 && (
@@ -256,6 +287,11 @@ export default function LessonPage() {
                   </>
                 )}
               </Button>
+              {isDemoMode && (
+                <p className="text-[10px] text-center text-orange-500 font-bold uppercase tracking-widest">
+                  Simulation Active: No API connection required
+                </p>
+              )}
             </CardContent>
           </Card>
         )}
@@ -290,6 +326,9 @@ export default function LessonPage() {
                     <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-none">
                       {gradeLevel}
                     </Badge>
+                    {isDemoMode && (
+                      <Badge variant="outline" className="text-[8px] border-white/40 text-white">DEMO MODE</Badge>
+                    )}
                   </div>
                   <span className="text-2xl mt-2 font-headline">{lesson.title}</span>
                 </CardTitle>
@@ -305,6 +344,7 @@ export default function LessonPage() {
               lessonContent={lesson.content} 
               expectedAnswer={lesson.expectedAnswer} 
               onComplete={handleEvaluationComplete}
+              isDemoMode={isDemoMode}
             />
           </div>
         )}
