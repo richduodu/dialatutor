@@ -39,7 +39,7 @@ export default function Home() {
                 </Button>
                 <Button size="lg" variant="outline" className="rounded-full px-10 h-14 text-lg font-bold gap-2 border-primary/20 text-black hover:bg-primary/5 transition-all hover:-translate-y-1" asChild>
                   <Link href="/dashboard">
-                    Impact Verifier <ShieldCheck className="h-5 w-5" />
+                    View Live Ledger <ShieldCheck className="h-5 w-5" />
                   </Link>
                 </Button>
               </div>
@@ -174,7 +174,7 @@ export default function Home() {
                 <Button size="lg" className="rounded-full bg-white text-slate-900 hover:bg-slate-100 font-bold h-14 px-10" asChild>
                   <Link href="/lesson">Get Started Now</Link>
                 </Button>
-                <Button size="lg" variant="outline" className="rounded-full border-white/20 text-black hover:bg-white/10 font-bold h-14 px-10" asChild>
+                <Button size="lg" variant="outline" className="rounded-full border-white/20 text-white hover:bg-white/10 font-bold h-14 px-10" asChild>
                   <Link href="/dashboard">View Live Ledger</Link>
                 </Button>
               </div>
@@ -208,9 +208,9 @@ export default function Home() {
             <div className="space-y-4">
               <h4 className="font-bold text-sm uppercase tracking-widest text-foreground">Verification</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="#" className="hover:text-primary transition-colors">Polygon Amoy Scan</Link></li>
-                <li><Link href="#" className="hover:text-primary transition-colors">Open-Source Audit</Link></li>
-                <li><Link href="#" className="hover:text-primary transition-colors">Partner API</Link></li>
+                <li><a href="https://amoy.polygonscan.com/" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Polygon Amoy Scan</a></li>
+                <li><Link href="/audit" className="hover:text-primary transition-colors">Open-Source Audit</Link></li>
+                <li><Link href="/api-docs" className="hover:text-primary transition-colors">Partner API</Link></li>
               </ul>
             </div>
           </div>
