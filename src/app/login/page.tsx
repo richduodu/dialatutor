@@ -57,10 +57,10 @@ export default function LoginPage() {
       return
     }
 
-    if (mode !== 'forgot' && pin.length < 4) {
+    if (mode !== 'forgot' && pin.length !== 6) {
       toast({
-        title: "PIN Too Short",
-        description: "Your security PIN must be at least 4 digits.",
+        title: "Invalid PIN",
+        description: "Your security PIN must be exactly 6 digits.",
         variant: "destructive"
       })
       return
@@ -207,7 +207,7 @@ export default function LoginPage() {
                       id="pin" 
                       type="password"
                       inputMode="numeric"
-                      placeholder="4-6 digit PIN" 
+                      placeholder="6 Digit PIN" 
                       className="pl-10 h-11 rounded-xl"
                       value={pin}
                       onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
