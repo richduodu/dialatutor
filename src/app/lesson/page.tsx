@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -7,11 +8,9 @@ import { VoiceRecorder } from "@/components/voice-recorder"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, BookOpen, Sparkles, RefreshCw, Database, WifiOff, Wifi, Info, ShieldCheck, AlertCircle } from "lucide-react"
+import { CheckCircle, ExternalLink, Loader2, BookOpen, Sparkles, RefreshCw, Database, WifiOff, Info, ShieldCheck, AlertCircle, Award, ChevronRight, GraduationCap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
 import { setDocumentNonBlocking } from "@/firebase/non-blocking-updates"
@@ -20,22 +19,27 @@ import { notifyStudent } from "@/ai/flows/notify-student-flow"
 import { mintProof } from "@/ai/flows/mint-proof-flow"
 import { useToast } from "@/hooks/use-toast"
 
+const LESSONS_REQUIRED_FOR_MINT = 3
+
 export default function LessonPage() {
   const { user, isUserLoading } = useUser()
   const db = useFirestore()
   const router = useRouter()
   const { toast } = useToast()
   
-  const [step, setStep] = useState(0) // 0: Selection, 1: Lesson, 2: Minting, 3: Success
+  // 0: Selection, 1: Lesson, 2: Minting, 3: Success, 4: Interim Progress
+  const [step, setStep] = useState(0) 
   const [subject, setSubject] = useState<string>("")
   const [gradeLevel, setGradeLevel] = useState<string>("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [isOfflineMode, setIsOfflineMode] = useState(false)
   const [mintingStatus, setMintingStatus] = useState<'idle' | 'minting' | 'completed'>('idle')
   const [txHash, setTxHash] = useState<string>("")
-  const [contractAddress, setContractAddress] = useState<string>("")
   const [mintMode, setMintMode] = useState<'live' | 'simulated' | null>(null)
   const [lesson, setLesson] = useState<{ id: string, title: string, content: string, expectedAnswer: string } | null>(null)
+  
+  // Session tracking
+  const [sessionLessons, setSessionLessons] = useState<{id: string, title: string, score: number}[]>([])
 
   const studentRef = useMemoFirebase(() => {
     if (!db || !user) return null
@@ -120,7 +124,7 @@ export default function LessonPage() {
     const attemptId = crypto.randomUUID()
     const now = new Date().toISOString()
     
-    // Save Lesson Attempt
+    // Save individual Lesson Attempt for history
     const attemptRef = doc(db, 'students', studentId, 'lessonAttempts', attemptId)
     setDocumentNonBlocking(attemptRef, {
       id: attemptId,
@@ -134,77 +138,95 @@ export default function LessonPage() {
       aiEvaluationResult: evaluation.evaluation,
       grade: evaluation.score,
       isCompleted: evaluation.isCorrect,
-      isOfflineMode: isOfflineMode
     }, { merge: true })
 
     if (evaluation.isCorrect) {
-      setStep(2)
-      setMintingStatus('minting')
+      // Check if this lesson is unique in this session
+      const isUnique = !sessionLessons.find(l => l.title === lesson.title)
+      const newSessionLessons = isUnique 
+        ? [...sessionLessons, { id: lesson.id, title: lesson.title, score: evaluation.score }]
+        : sessionLessons
 
-      try {
-        const mintResult = await mintProof({
-          studentId,
-          lessonTitle: lesson.title,
-          grade: evaluation.score
-        })
+      setSessionLessons(newSessionLessons)
 
-        const proofId = crypto.randomUUID()
-        const proofData = {
-          id: proofId,
-          lessonAttemptId: attemptId,
-          studentId,
-          lessonId: lesson.id,
-          lessonTitle: lesson.title,
-          grade: evaluation.score,
-          blockchainNetwork: mintResult.network,
-          contractAddress: mintResult.contractAddress,
-          tokenId: mintResult.tokenId,
-          transactionHash: mintResult.transactionHash,
-          mintingDate: now,
-          blockExplorerUrl: `https://amoy.polygonscan.com/tx/${mintResult.transactionHash}`,
-          isOfflineMode: isOfflineMode,
-          mode: mintResult.mode
-        }
-        
-        setDocumentNonBlocking(doc(db, 'students', studentId, 'proofsOfLearning', proofId), proofData, { merge: true })
-        setDocumentNonBlocking(doc(db, 'proofsOfLearning_public', proofId), proofData, { merge: true })
-
-        // Create Report
-        const reportId = crypto.randomUUID()
-        setDocumentNonBlocking(doc(db, 'students', studentId, 'studentReports', reportId), {
-          id: reportId,
-          studentId,
-          generatedDate: now,
-          reportContent: `Student completed "${lesson.title}" with score ${evaluation.score}%. Verification hash: ${mintResult.transactionHash}`,
-          lessonAttemptIds: [attemptId],
-          overallGrade: evaluation.score,
-          sentViaSms: !isOfflineMode && !!studentProfile?.phoneNumber,
-          sentDate: !isOfflineMode ? now : null
-        }, { merge: true })
-
-        if (!isOfflineMode && studentProfile?.phoneNumber) {
-          notifyStudent({
-            phoneNumber: studentProfile.phoneNumber,
-            lessonTitle: lesson.title,
-            score: evaluation.score
-          }).catch(err => console.error("[BACKEND] Notification Flow failed:", err));
-        }
-
-        setTxHash(mintResult.transactionHash)
-        setContractAddress(mintResult.contractAddress)
-        setMintMode(mintResult.mode)
-        setMintingStatus('completed')
-        setStep(3)
-
-      } catch (err) {
-        console.error("[BLOCKCHAIN] Minting Flow failed:", err)
-        toast({
-          title: "Blockchain Link Failed",
-          description: "We couldn't record your achievement on-chain. Progress saved locally.",
-          variant: "destructive"
-        })
-        setStep(1)
+      if (newSessionLessons.length < LESSONS_REQUIRED_FOR_MINT) {
+        // Show progress UI
+        setStep(4)
+      } else {
+        // Goal reached! Proceed to minting
+        handleFinalMinting(newSessionLessons)
       }
+    }
+  }
+
+  const handleFinalMinting = async (finalLessons: {id: string, title: string, score: number}[]) => {
+    if (!user || !db) return
+    
+    setStep(2)
+    setMintingStatus('minting')
+    const now = new Date().toISOString()
+    const avgScore = Math.round(finalLessons.reduce((acc, l) => acc + l.score, 0) / finalLessons.length)
+
+    try {
+      const mintResult = await mintProof({
+        studentId: user.uid,
+        lessonTitle: `${finalLessons.length} Lesson Mastery Bundle`,
+        grade: avgScore
+      })
+
+      const proofId = crypto.randomUUID()
+      const proofData = {
+        id: proofId,
+        studentId: user.uid,
+        lessonTitle: "3-Lesson Mastery Achievement",
+        grade: avgScore,
+        blockchainNetwork: mintResult.network,
+        contractAddress: mintResult.contractAddress,
+        tokenId: mintResult.tokenId,
+        transactionHash: mintResult.transactionHash,
+        mintingDate: now,
+        blockExplorerUrl: `https://amoy.polygonscan.com/tx/${mintResult.transactionHash}`,
+        mode: mintResult.mode,
+        aggregatedLessons: finalLessons
+      }
+      
+      setDocumentNonBlocking(doc(db, 'students', user.uid, 'proofsOfLearning', proofId), proofData, { merge: true })
+      setDocumentNonBlocking(doc(db, 'proofsOfLearning_public', proofId), proofData, { merge: true })
+
+      // Create Report
+      const reportId = crypto.randomUUID()
+      setDocumentNonBlocking(doc(db, 'students', user.uid, 'studentReports', reportId), {
+        id: reportId,
+        studentId: user.uid,
+        generatedDate: now,
+        reportContent: `Student mastered 3 unique lessons with an average score of ${avgScore}%. Completed modules: ${finalLessons.map(l => l.title).join(', ')}.`,
+        lessonAttemptIds: finalLessons.map(l => l.id),
+        overallGrade: avgScore,
+        sentViaSms: !!studentProfile?.phoneNumber,
+        sentDate: now
+      }, { merge: true })
+
+      if (studentProfile?.phoneNumber) {
+        notifyStudent({
+          phoneNumber: studentProfile.phoneNumber,
+          lessonTitle: "3-Lesson Mastery",
+          score: avgScore
+        }).catch(err => console.error("[BACKEND] Notification Flow failed:", err));
+      }
+
+      setTxHash(mintResult.transactionHash)
+      setMintMode(mintResult.mode)
+      setMintingStatus('completed')
+      setStep(3)
+
+    } catch (err) {
+      console.error("[BLOCKCHAIN] Minting Flow failed:", err)
+      toast({
+        title: "Blockchain Link Failed",
+        description: "We couldn't record your achievement on-chain. Progress saved locally.",
+        variant: "destructive"
+      })
+      setStep(0)
     }
   }
 
@@ -235,6 +257,19 @@ export default function LessonPage() {
             </Badge>
           </div>
         </div>
+
+        {/* Global Session Progress Tracker */}
+        {sessionLessons.length > 0 && step !== 3 && (
+          <div className="mb-8 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-1">
+                <GraduationCap className="h-3 w-3" /> Session Goal: Proof of Learning
+              </p>
+              <span className="text-xs font-bold text-primary">{sessionLessons.length}/{LESSONS_REQUIRED_FOR_MINT} Lessons</span>
+            </div>
+            <Progress value={(sessionLessons.length / LESSONS_REQUIRED_FOR_MINT) * 100} className="h-1.5" />
+          </div>
+        )}
 
         {step === 0 && (
           <Card className="border-none shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -314,7 +349,7 @@ export default function LessonPage() {
             </div>
             <Card className="border-none shadow-xl bg-primary text-primary-foreground overflow-hidden relative">
               <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Smartphone className="h-24 w-24" />
+                <BookOpen className="h-24 w-24" />
               </div>
               <CardHeader>
                 <CardTitle className="flex flex-col gap-2">
@@ -345,6 +380,43 @@ export default function LessonPage() {
           </div>
         )}
 
+        {step === 4 && (
+          <div className="space-y-8 animate-in zoom-in-95 duration-500 text-center">
+             <div className="mx-auto w-24 h-24 bg-accent/10 rounded-full flex items-center justify-center mb-4">
+                <Award className="h-12 w-12 text-accent" />
+             </div>
+             <div className="space-y-2">
+                <h2 className="text-3xl font-black font-headline">Lesson Complete!</h2>
+                <p className="text-muted-foreground">You are {LESSONS_REQUIRED_FOR_MINT - sessionLessons.length} unique lessons away from your next Proof of Learning.</p>
+             </div>
+
+             <div className="grid gap-4 max-w-sm mx-auto">
+                {sessionLessons.map((l, i) => (
+                  <div key={i} className="flex items-center gap-3 p-4 bg-white rounded-xl border border-border shadow-sm">
+                    <CheckCircle className="h-5 w-5 text-accent" />
+                    <div className="text-left flex-1">
+                      <p className="text-sm font-bold truncate">{l.title}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold">Accuracy: {l.score}%</p>
+                    </div>
+                  </div>
+                ))}
+                {Array.from({length: LESSONS_REQUIRED_FOR_MINT - sessionLessons.length}).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-4 bg-muted/20 rounded-xl border border-dashed border-muted-foreground/20">
+                    <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/20" />
+                    <p className="text-sm font-bold text-muted-foreground italic">Upcoming Module</p>
+                  </div>
+                ))}
+             </div>
+
+             <Button className="w-full h-14 rounded-full text-lg font-bold gap-2 shadow-xl" onClick={() => {
+               setStep(0)
+               setLesson(null)
+             }}>
+                Continue to Next Lesson <ChevronRight className="h-5 w-5" />
+             </Button>
+          </div>
+        )}
+
         {step === 2 && (
           <div className="text-center space-y-8 py-20 animate-in fade-in zoom-in-95 duration-300">
             <div className="relative inline-block">
@@ -354,13 +426,13 @@ export default function LessonPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <h2 className="text-3xl font-bold font-headline">Minting Proof of Learning</h2>
-              <p className="text-muted-foreground">Securing your achievement on the Polygon Amoy Testnet.</p>
+              <h2 className="text-3xl font-bold font-headline">Securing Mastery Proof</h2>
+              <p className="text-muted-foreground">Recording your 3-lesson achievement on Polygon Amoy.</p>
             </div>
             <div className="max-w-xs mx-auto">
               <Progress value={66} className="h-2" />
               <p className="text-[10px] uppercase font-bold mt-2 text-muted-foreground">
-                Broadcasting Transaction...
+                Broadcasting Master Record...
               </p>
             </div>
           </div>
@@ -374,41 +446,29 @@ export default function LessonPage() {
                 <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-accent/10">
                   <CheckCircle className="h-10 w-10 text-accent" />
                 </div>
-                <h2 className="text-3xl font-extrabold mb-2 font-headline">Achievement Unlocked!</h2>
+                <h2 className="text-3xl font-extrabold mb-2 font-headline">Mastery Achieved!</h2>
                 <p className="text-muted-foreground mb-8">
-                  Your response was verified and your Proof of Learning has been permanently recorded.
+                  You've successfully completed {LESSONS_REQUIRED_FOR_MINT} modules. Your consolidated Proof of Learning is now secure.
                 </p>
-
-                {mintMode === 'simulated' && (
-                  <Card className="mb-6 bg-orange-50 border-orange-100 text-orange-800 text-left">
-                    <CardContent className="p-4 flex gap-3 items-start">
-                      <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-xs font-bold uppercase mb-1">Simulated Record</p>
-                        <p className="text-xs opacity-90 leading-snug">The blockchain environment variables are not set. This transaction is simulated and will not appear on a live block explorer.</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
 
                 <div className="space-y-4 text-left">
                   <div className="p-5 rounded-2xl bg-muted/50 border border-border">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Database className="h-4 w-4 text-primary" />
-                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Blockchain Proof</p>
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Aggregated Proof</p>
                       </div>
-                      <Badge variant="secondary" className={`text-[8px] h-4 border-none ${mintMode === 'simulated' ? 'bg-orange-100 text-orange-600' : 'bg-primary/10 text-primary'}`}>
+                      <Badge variant="secondary" className="text-[8px] h-4 border-none bg-primary/10 text-primary uppercase">
                         {mintMode === 'simulated' ? 'SIMULATED' : 'AMOY TESTNET'}
                       </Badge>
                     </div>
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Network</span>
-                        <Badge variant="outline" className="text-[10px] font-mono">{mintMode === 'simulated' ? 'AMOY (SIMULATED)' : 'POLYGON AMOY'}</Badge>
+                        <span className="text-xs text-muted-foreground">Lessons Completed</span>
+                        <span className="font-bold text-sm">{LESSONS_REQUIRED_FOR_MINT}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Hash</span>
+                        <span className="text-xs text-muted-foreground">Tx Hash</span>
                         <span className="font-mono text-[10px] truncate max-w-[120px]">{txHash}</span>
                       </div>
                       <Button 
@@ -417,13 +477,9 @@ export default function LessonPage() {
                         disabled={mintMode === 'simulated'}
                         asChild
                       >
-                        {mintMode === 'simulated' ? (
-                          <span>Hash not on explorer in Simulation Mode</span>
-                        ) : (
-                          <a href={`https://amoy.polygonscan.com/tx/${txHash}`} target="_blank" rel="noopener noreferrer">
-                            Verify on AmoyScan <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
+                        <a href={`https://amoy.polygonscan.com/tx/${txHash}`} target="_blank" rel="noopener noreferrer">
+                          Verify on AmoyScan <ExternalLink className="h-3 w-3" />
+                        </a>
                       </Button>
                     </div>
                   </div>
@@ -436,10 +492,10 @@ export default function LessonPage() {
                   <Button variant="outline" className="w-full rounded-full h-12" onClick={() => {
                     setStep(0)
                     setLesson(null)
+                    setSessionLessons([])
                     setTxHash("")
-                    setMintMode(null)
                   }}>
-                    Take Another Lesson
+                    Start New Session
                   </Button>
                 </div>
               </CardContent>
