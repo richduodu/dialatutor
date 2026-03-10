@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -36,7 +35,6 @@ export function Navbar() {
                 alt="Metaschool Logo" 
                 fill
                 className="object-contain"
-                // If the local image fails, the placeholder from our library is used as a fallback hint
                 placeholder="blur"
                 blurDataURL={logoImage?.imageUrl}
               />

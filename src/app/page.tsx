@@ -1,4 +1,3 @@
-
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -138,10 +137,10 @@ export default function Home() {
                 }
               ].map((feature, i) => (
                 <Card key={i} className="group border-none shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 bg-white overflow-hidden">
-                  <div className={`h-1.5 w-full bg-${feature.color}`} />
+                  <div className="h-1.5 w-full bg-primary" />
                   <CardHeader>
-                    <div className={`w-14 h-14 bg-${feature.color}/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500`}>
-                      <feature.icon className={`h-7 w-7 text-${feature.color}`} />
+                    <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+                      <feature.icon className="h-7 w-7 text-primary" />
                     </div>
                     <CardTitle className="text-xl font-bold font-headline">{feature.title}</CardTitle>
                   </CardHeader>
