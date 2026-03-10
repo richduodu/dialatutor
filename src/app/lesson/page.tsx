@@ -408,12 +408,25 @@ export default function LessonPage() {
                 ))}
              </div>
 
-             <Button className="w-full h-14 rounded-full text-lg font-bold gap-2 shadow-xl" onClick={() => {
-               setStep(0)
-               setLesson(null)
-             }}>
-                Continue to Next Lesson <ChevronRight className="h-5 w-5" />
-             </Button>
+             <div className="flex flex-col gap-3">
+                <Button className="w-full h-14 rounded-full text-lg font-bold gap-2 shadow-xl" onClick={handleStartLesson} disabled={isGenerating}>
+                   {isGenerating ? (
+                     <>
+                       <Loader2 className="h-5 w-5 animate-spin" /> Preparing Next Lesson...
+                     </>
+                   ) : (
+                     <>
+                       Continue to Next Lesson <ChevronRight className="h-5 w-5" />
+                     </>
+                   )}
+                </Button>
+                <Button variant="ghost" className="text-xs text-muted-foreground font-bold" onClick={() => {
+                  setStep(0)
+                  setLesson(null)
+                }}>
+                  Change Subject / Level
+                </Button>
+             </div>
           </div>
         )}
 
