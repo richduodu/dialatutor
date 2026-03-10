@@ -58,7 +58,6 @@ export default function LoginPage() {
         const studentRef = doc(db, 'students', loggedUser.uid)
         const docSnap = await getDoc(studentRef)
         
-        // If profile doesn't exist, create a basic one
         if (!docSnap.exists()) {
           await setDoc(studentRef, {
             id: loggedUser.uid,
@@ -76,9 +75,15 @@ export default function LoginPage() {
       router.push("/lesson")
     } catch (error: any) {
       console.error("Google Auth Error:", error)
+      
+      let message = error.message || "Could not connect to Google."
+      if (message.includes('getprojectconfig-are-blocked')) {
+        message = "Identity Toolkit API is blocked. Go to Google Cloud Console > APIs > Credentials and ensure your API Key allows 'Identity Toolkit API'."
+      }
+
       toast({
         title: "Google Sign-In Failed",
-        description: error.message || "Could not connect to Google.",
+        description: message,
         variant: "destructive"
       })
     } finally {
@@ -146,9 +151,14 @@ export default function LoginPage() {
       let title = "Access Denied"
       let message = "Please check your credentials and try again."
       
-      if (error.message?.includes('signup-are-blocked') || error.code === 'auth/operation-not-allowed') {
+      const errorMsg = error.message || ""
+      
+      if (errorMsg.includes('getprojectconfig-are-blocked')) {
+        title = "API Configuration Error"
+        message = "The Identity Toolkit API is blocked. Please go to Google Cloud Console > APIs & Services > Credentials and ensure your API Key is unrestricted or allows 'Identity Toolkit API'."
+      } else if (errorMsg.includes('signup-are-blocked') || error.code === 'auth/operation-not-allowed') {
         title = "Sign-up Blocked"
-        message = "New registrations are currently restricted. Please ensure 'Enable create (sign-up)' is ON in your Firebase Console (Settings > User sign-up)."
+        message = "New registrations are restricted. Please ensure 'Enable create (sign-up)' is ON in your Firebase Console (Settings > User sign-up)."
       } else if (error.code === 'auth/user-not-found') {
         message = "No account found with this phone number. Please register first."
       } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -334,12 +344,18 @@ export default function LoginPage() {
                   {isGoogleSubmitting ? "Authenticating..." : "Sign in with Google"}
                 </Button>
                 
-                {mode === 'register' && (
+                {(mode === 'register' || isSubmitting || isGoogleSubmitting) && (
                   <div className="mt-4 p-3 bg-primary/5 rounded-xl border border-primary/10 flex gap-3">
                     <AlertTriangle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <p className="text-[10px] text-muted-foreground leading-relaxed">
-                      <strong>Admin Note:</strong> If registration fails, ensure "Enable create (sign-up)" is ON in the Firebase Auth Settings console.
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        <strong>Troubleshooting:</strong> If you see "blocked" errors, check the following:
+                      </p>
+                      <ul className="list-disc pl-4 text-[9px] text-muted-foreground space-y-0.5">
+                        <li>Google Cloud Console: Ensure "Identity Toolkit API" is not blocked by your API Key restrictions.</li>
+                        <li>Firebase Console: Ensure "Enable create (sign-up)" is ON in Auth Settings.</li>
+                      </ul>
+                    </div>
                   </div>
                 )}
               </div>
