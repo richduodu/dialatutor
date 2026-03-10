@@ -1,4 +1,3 @@
-
 # Dial A Tutor - Immutable Proof of Learning
 
 Dial A Tutor is a voice-first educational platform designed to bridge the digital learning divide. It allows students in low-connectivity regions to receive oral lessons via any phone and earn immutable, database-backed "Proof of Learning" credentials.
@@ -6,14 +5,14 @@ Dial A Tutor is a voice-first educational platform designed to bridge the digita
 ## Project Structure & Assets
 
 ### Logo & Images
-To ensure the logo loads correctly, ensure your folder structure looks like this:
+To ensure the logo loads correctly, your folder structure MUST look like this:
 ```
 /root
   /public
     /images
       metaschool.png
 ```
-The application references this as `/images/metaschool.png`.
+**DO NOT** place the `images` folder inside `src`. The application references assets starting from the `public` folder, so `/images/metaschool.png` in code points to `public/images/metaschool.png`.
 
 ## Setup & Environment Variables
 
@@ -32,7 +31,7 @@ To transition from **Simulation Mode** to **Live Mode**, you must set the follow
 5. Once created, click **API Key** and copy the **HTTPS** URL. Paste this into `.env` as `BLOCKCHAIN_RPC_URL`.
 
 #### B. Get your Private Key (MetaMask Extension)
-**IMPORTANT:** You must use the **MetaMask Browser Extension** (the fox icon in your browser), not the web portfolio dashboard.
+**IMPORTANT:** You must use the **MetaMask Browser Extension** (the fox icon in your browser toolbar), not the web portfolio dashboard.
 1. Open the **MetaMask Extension** from your browser toolbar.
 2. Click the **three dots (⋮)** in the top right of the account card.
 3. Select **Account details**.
