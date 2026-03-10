@@ -11,22 +11,25 @@ Dial A Tutor is a voice-first educational platform designed to bridge the digita
 - **Blockchain Verification:** Lessons are minted as Proof of Learning tokens on the **Polygon Amoy Testnet**.
 - **Impact Verifier Dashboard:** A public ledger for funders and NGOs to audit educational outcomes in real-time.
 
-## Integration & Setup
+## Setup & Environment Variables
+
+To run this application with live services, create a `.env` file (or set these in your Firebase App Hosting Secrets):
+
+### AI Integration (Gemini)
+- `GOOGLE_GENAI_API_KEY`: Your API key from Google AI Studio. Ensure the "Generative Language API" is enabled.
 
 ### SMS Integration (Twilio)
-Add credentials to your `.env.local` or Firebase App Hosting Secrets:
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
 - `TWILIO_PHONE_NUMBER`
 
 ### Blockchain Integration (Polygon Amoy)
-The platform now supports **live minting** to the Polygon Amoy testnet.
-Add these environment variables to enable live transactions:
+The platform supports **live minting** to the Polygon Amoy testnet. 
 - `BLOCKCHAIN_RPC_URL`: Your Alchemy or Infura RPC URL for Amoy.
 - `MINTER_PRIVATE_KEY`: A private key with Amoy MATIC to cover gas.
 - `CONTRACT_ADDRESS`: (Optional) The address of your deployed Proof of Learning contract.
 
-*If these are missing, the system defaults to **Simulation Mode**, generating valid-looking hashes for demo purposes.*
+*If these are missing, the system defaults to **Simulation Mode**, generating valid-looking hashes and transcriptions for demo purposes.*
 
 ## Tech Stack
 
