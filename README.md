@@ -18,19 +18,24 @@ To transition from **Simulation Mode** to **Live Mode**, you must set the follow
 - `GOOGLE_GENAI_API_KEY`: Your API key from [Google AI Studio](https://aistudio.google.com/).
 
 ### 2. Blockchain Integration (Polygon Amoy)
-To record real learning proofs on-chain:
-- **`BLOCKCHAIN_RPC_URL`**: 
-    1. Go to [Alchemy](https://www.alchemy.com/).
-    2. Click **Create App**.
-    3. Select **Polygon PoS** as the Chain.
-    4. Select **Amoy** as the Network (Testnet).
-    5. Copy the HTTPS RPC URL from the API Key section.
-- **`MINTER_PRIVATE_KEY`**: 
-    1. Open your MetaMask (or similar) wallet.
-    2. Switch to the **Polygon Amoy Testnet**.
-    3. Export your Private Key from Account Details.
-    4. **Gas Fees:** Ensure you have "Amoy MATIC" in this wallet. You can get free test tokens from the [Polygon Faucet](https://faucet.polygon.technology/).
-- **`CONTRACT_ADDRESS`**: Use the provided default or deploy your own ERC-721/1155 contract.
+
+#### A. Get your RPC URL (Alchemy)
+1. Sign in to [Alchemy](https://www.alchemy.com/).
+2. Click **Create App**.
+3. Select **Polygon PoS** as the **Chain**.
+4. Select **Amoy** as the **Network**.
+5. Once created, click **API Key** and copy the **HTTPS** URL. Paste this into `.env` as `BLOCKCHAIN_RPC_URL`.
+
+#### B. Get your Private Key (MetaMask)
+1. Open the MetaMask extension.
+2. Click the **three dots (⋮)** in the top right of your account card.
+3. Select **Account details**.
+4. Click **Show private key**, enter your password, and hold to reveal.
+5. Copy the key and paste it into `.env` as `MINTER_PRIVATE_KEY`.
+   - **Note:** Do NOT include the `0x` prefix if MetaMask doesn't provide it.
+
+#### C. Get Test MATIC (Faucet)
+- Your wallet needs gas to pay for transactions. Go to the [Polygon Faucet](https://faucet.polygon.technology/) or [Alchemy Faucet](https://www.alchemyadvisors.com/faucets/polygon-amoy), paste your wallet address, and request "Amoy MATIC".
 
 ### 3. SMS Integration (Twilio)
 - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: (Optional) For sending automated SMS reports.
