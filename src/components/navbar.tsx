@@ -1,18 +1,22 @@
+
 "use client"
 
 import Link from "next/link"
 import Image from "next/image"
-import { ShieldCheck, BookOpen, BarChart3, Phone, User, LogOut } from "lucide-react"
+import { ShieldCheck, BarChart3, Phone, User, LogOut } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useUser, useAuth } from "@/firebase"
 import { Button } from "@/components/ui/button"
 import { signOut } from "firebase/auth"
+import { PlaceHolderImages } from "@/lib/placeholder-images"
 
 export function Navbar() {
   const pathname = usePathname()
   const { user } = useUser()
   const auth = useAuth()
+  
+  const logoImage = PlaceHolderImages.find(img => img.id === 'app-logo')
 
   const links = [
     { href: "/", label: "Home", icon: ShieldCheck },
@@ -26,13 +30,17 @@ export function Navbar() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
-            <Image 
-              src="/images/metaschool.png" 
-              alt="Metaschool Logo" 
-              width={32} 
-              height={32} 
-              className="rounded-md"
-            />
+            <div className="relative h-8 w-8 overflow-hidden rounded-md bg-primary/10">
+              <Image 
+                src="/images/metaschool.png" 
+                alt="Metaschool Logo" 
+                fill
+                className="object-contain"
+                // If the local image fails, the placeholder from our library is used as a fallback hint
+                placeholder="blur"
+                blurDataURL={logoImage?.imageUrl}
+              />
+            </div>
             <span className="text-xl font-black tracking-tighter text-primary">Dial A Tutor</span>
           </Link>
         </div>

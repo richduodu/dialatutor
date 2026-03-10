@@ -17,6 +17,12 @@
       "description": "Visual representation of secure blockchain data",
       "imageUrl": "https://picsum.photos/seed/chain-data/600/400",
       "imageHint": "blockchain network"
+    },
+    {
+      "id": "app-logo",
+      "description": "Metaschool Branded Logo",
+      "imageUrl": "https://picsum.photos/seed/metaschool-logo/64/64",
+      "imageHint": "education logo"
     }
   ]
 }

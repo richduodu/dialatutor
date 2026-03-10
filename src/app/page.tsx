@@ -1,8 +1,9 @@
+
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Phone, ShieldCheck, Cpu, Globe, Zap, CheckCircle2 } from "lucide-react"
+import { Phone, ShieldCheck, Cpu, Globe, Zap, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { PlaceHolderImages } from "@/lib/placeholder-images"
@@ -10,7 +11,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images"
 export default function Home() {
   const heroImage = PlaceHolderImages.find(img => img.id === 'hero-abstract')
   const studentImage = PlaceHolderImages.find(img => img.id === 'student-voice')
-  const verifyImage = PlaceHolderImages.find(img => img.id === 'blockchain-verify')
+  const logoImage = PlaceHolderImages.find(img => img.id === 'app-logo')
 
   return (
     <div className="flex flex-col min-h-screen bg-background selection:bg-primary/20">
@@ -188,13 +189,16 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
             <div className="col-span-2">
               <Link href="/" className="flex items-center gap-2 mb-6">
-                <Image 
-                  src="/images/metaschool.png" 
-                  alt="Metaschool Logo" 
-                  width={32} 
-                  height={32} 
-                  className="rounded-md"
-                />
+                <div className="relative h-8 w-8 overflow-hidden rounded-md bg-primary/10">
+                   <Image 
+                    src="/images/metaschool.png" 
+                    alt="Metaschool Logo" 
+                    fill
+                    className="object-contain"
+                    placeholder="blur"
+                    blurDataURL={logoImage?.imageUrl}
+                  />
+                </div>
                 <span className="text-2xl font-black tracking-tighter text-primary">Dial A Tutor</span>
               </Link>
               <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
