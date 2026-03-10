@@ -19,7 +19,12 @@ To transition from **Simulation Mode** to **Live Mode**, you must set the follow
 
 ### 2. Blockchain Integration (Polygon Amoy)
 To record real learning proofs on-chain:
-- **`BLOCKCHAIN_RPC_URL`**: Create an account at [Alchemy](https://www.alchemy.com/), create a new App for "Polygon Amoy", and copy the HTTPS RPC URL.
+- **`BLOCKCHAIN_RPC_URL`**: 
+    1. Go to [Alchemy](https://www.alchemy.com/).
+    2. Click **Create App**.
+    3. Select **Polygon PoS** as the Chain.
+    4. Select **Amoy** as the Network (Testnet).
+    5. Copy the HTTPS RPC URL from the API Key section.
 - **`MINTER_PRIVATE_KEY`**: 
     1. Open your MetaMask (or similar) wallet.
     2. Switch to the **Polygon Amoy Testnet**.
