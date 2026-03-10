@@ -18,6 +18,7 @@ import { generateLesson } from "@/ai/flows/generate-lesson-flow"
 import { notifyStudent } from "@/ai/flows/notify-student-flow"
 import { mintProof } from "@/ai/flows/mint-proof-flow"
 import { useToast } from "@/hooks/use-toast"
+import confetti from "canvas-confetti"
 
 const LESSONS_REQUIRED_FOR_MINT = 3
 
@@ -141,6 +142,13 @@ export default function LessonPage() {
     }, { merge: true })
 
     if (evaluation.isCorrect) {
+      // Celebrate single lesson completion
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+
       // Check if this lesson is unique in this session
       const isUnique = !sessionLessons.find(l => l.title === lesson.title)
       const newSessionLessons = isUnique 
@@ -218,6 +226,31 @@ export default function LessonPage() {
       setMintMode(mintResult.mode)
       setMintingStatus('completed')
       setStep(3)
+
+      // Grand finale celebration
+      const end = Date.now() + 3 * 1000;
+      const colors = ["#3b82f6", "#06b6d4", "#ffffff"];
+
+      (function frame() {
+        confetti({
+          particleCount: 3,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: colors,
+        });
+        confetti({
+          particleCount: 3,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: colors,
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      })();
 
     } catch (err) {
       console.error("[BLOCKCHAIN] Minting Flow failed:", err)
