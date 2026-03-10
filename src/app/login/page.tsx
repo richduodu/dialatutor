@@ -103,7 +103,10 @@ export default function LoginPage() {
       console.error("Auth error:", error)
       let message = "Please check your credentials and try again."
       
-      if (error.code === 'auth/user-not-found') {
+      // Handle the specific error where signups are blocked in the Firebase Console
+      if (error.message?.includes('signup-are-blocked') || error.code === 'auth/operation-not-allowed') {
+        message = "Sign-up is blocked in your Firebase Console. Please go to Authentication > Settings and enable 'Allow users to sign up'."
+      } else if (error.code === 'auth/user-not-found') {
         message = "No account found with this phone number. Please register."
       } else if (error.code === 'auth/wrong-password') {
         message = "Incorrect PIN. Please try again."
