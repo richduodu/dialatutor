@@ -17,6 +17,7 @@ To run this application with live services, create a `.env` file (or set these i
 
 ### AI Integration (Gemini)
 - `GOOGLE_GENAI_API_KEY`: Your API key from Google AI Studio. Ensure the "Generative Language API" is enabled.
+- `GOOGLE_GENAI_MODEL`: (Optional) Override the default model (`googleai/gemini-2.5-flash`).
 
 ### SMS Integration (Twilio)
 - `TWILIO_ACCOUNT_SID`
