@@ -372,6 +372,7 @@ export default function LessonPage() {
             </Card>
 
             <VoiceRecorder 
+              key={lesson.id}
               lessonContent={lesson.content} 
               expectedAnswer={lesson.expectedAnswer} 
               onComplete={handleEvaluationComplete}
