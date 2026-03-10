@@ -8,11 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, Search, Globe, Loader2, Database, Info, ShieldAlert, Link as LinkIcon } from "lucide-react"
+import { ExternalLink, Search, Globe, Loader2, Database, Info, ShieldAlert, Link as LinkIcon, Code } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, orderBy, limit } from "firebase/firestore"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export default function FunderDashboard() {
   const { user, isUserLoading } = useUser()
@@ -52,7 +58,6 @@ export default function FunderDashboard() {
     )
   }, [proofs, searchTerm])
 
-  // Gate the dashboard content while authorizing
   if (isUserLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-background items-center justify-center">
@@ -62,7 +67,6 @@ export default function FunderDashboard() {
     )
   }
 
-  // Final gate: If user is not present (e.g. during redirect), show restricted notice
   if (!user) {
     return (
       <div className="flex flex-col min-h-screen bg-background items-center justify-center p-4">
@@ -115,7 +119,7 @@ export default function FunderDashboard() {
         <Alert className="mb-12 bg-primary/5 border-primary/20 rounded-2xl">
           <Info className="h-4 w-4 text-primary" />
           <AlertDescription className="text-xs text-primary/80 font-medium">
-            <strong>Blockchain Transparency:</strong> This dashboard displays learning transactions currently recorded on the Polygon Amoy Testnet. In a production environment, these represent immutable proofs of educational impact.
+            <strong>Verification Guide:</strong> Each transaction below contains the student ID, lesson title, and grade encoded as UTF-8 hex in the "Input Data" field on the blockchain explorer.
           </AlertDescription>
         </Alert>
 
@@ -156,15 +160,15 @@ export default function FunderDashboard() {
         <Card className="border-none shadow-2xl overflow-hidden">
           <CardHeader className="bg-white border-b flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="font-headline">On-Chain Proofs</CardTitle>
-              <CardDescription>Publicly verifiable transactions with explorer links.</CardDescription>
+              <CardTitle className="font-headline text-lg">Immutable Proofs</CardTitle>
+              <CardDescription className="text-xs">Real-time data stream from the Polygon network.</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
                   placeholder="Filter by hash or student..." 
-                  className="pl-9 w-64 bg-muted/50 border-none h-10"
+                  className="pl-9 w-64 bg-muted/50 border-none h-10 text-sm"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -181,42 +185,58 @@ export default function FunderDashboard() {
                 <TableHeader className="bg-muted/30">
                   <TableRow>
                     <TableHead className="font-bold">Student</TableHead>
-                    <TableHead className="font-bold">Lesson</TableHead>
-                    <TableHead className="font-bold text-center">Score</TableHead>
+                    <TableHead className="font-bold">Lesson Achievement</TableHead>
+                    <TableHead className="font-bold text-center">Grade</TableHead>
                     <TableHead className="font-bold">Minted At</TableHead>
-                    <TableHead className="font-bold">Tx Hash</TableHead>
-                    <TableHead className="text-right font-bold">Verification</TableHead>
+                    <TableHead className="font-bold">On-Chain Payload</TableHead>
+                    <TableHead className="text-right font-bold">Explorer</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredProofs.map((row) => (
-                    <TableRow key={row.id} className="hover:bg-muted/10 transition-colors">
+                    <TableRow key={row.id} className="hover:bg-muted/5 transition-colors">
                       <TableCell className="font-medium py-4">
                         <div className="flex items-center gap-2">
                           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                             <Database className="h-4 w-4 text-primary" />
                           </div>
-                          <span className="truncate max-w-[100px]">Learner #{row.studentId.slice(0, 5)}</span>
+                          <span className="text-xs font-bold">Learner #{row.studentId.slice(0, 5)}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-[150px] truncate">{row.lessonTitle || "Module Completion"}</TableCell>
+                      <TableCell className="max-w-[150px] truncate text-xs">{row.lessonTitle || "Module Completion"}</TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">
+                        <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20 text-[10px] px-2">
                           {row.grade || 0}%
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
+                      <TableCell className="text-muted-foreground text-[10px] whitespace-nowrap">
                         {new Date(row.mintingDate).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </TableCell>
                       <TableCell>
-                        <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono">
-                          {row.transactionHash.slice(0, 8)}...
-                        </code>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center gap-1 cursor-help">
+                                <Code className="h-3 w-3 text-muted-foreground" />
+                                <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono text-primary/70">
+                                  PoL|Learner:{row.studentId.slice(0, 4)}...
+                                </code>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-slate-900 text-white border-none p-3 max-w-xs">
+                              <p className="text-[10px] font-bold mb-1 uppercase tracking-widest text-accent">Stored Metadata</p>
+                              <p className="text-[10px] font-mono break-all leading-relaxed">
+                                PoL|Learner:{row.studentId}|Lesson:{row.lessonTitle}|Grade:{row.grade}%
+                              </p>
+                              <p className="text-[9px] mt-2 opacity-60">This exact string is encoded as hex in the transaction Input Data.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm" className="gap-1 h-8 text-[10px] font-bold border-primary text-primary hover:bg-primary hover:text-white" asChild>
                           <a href={`https://amoy.polygonscan.com/tx/${row.transactionHash}`} target="_blank" rel="noopener noreferrer">
-                            AmoyScan <ExternalLink className="h-3 w-3" />
+                            Verify <ExternalLink className="h-3 w-3" />
                           </a>
                         </Button>
                       </TableCell>
@@ -224,7 +244,7 @@ export default function FunderDashboard() {
                   ))}
                   {filteredProofs.length === 0 && !isProofsLoading && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic">
+                      <TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic text-sm">
                         No learning transactions found on Amoy Testnet.
                       </TableCell>
                     </TableRow>

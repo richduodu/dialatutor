@@ -19,7 +19,9 @@ import {
   MessageSquare,
   Loader2,
   Database,
-  Link as LinkIcon
+  Info,
+  Link as LinkIcon,
+  Search
 } from "lucide-react"
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
@@ -58,6 +60,9 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ attemp
       </div>
     )
   }
+
+  // Calculate the raw data payload that matches what's sent to the chain
+  const rawPayload = `PoL|Learner:${user.uid}|Lesson:${attempt.lessonTitle}|Grade:${attempt.grade}%`;
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -122,32 +127,52 @@ export default function AttemptDetailPage({ params }: { params: Promise<{ attemp
           </Card>
 
           {attempt.isCompleted && (
-            <Card className="border-none shadow-2xl bg-primary text-primary-foreground relative overflow-hidden">
+            <Card className="border-none shadow-2xl bg-slate-900 text-white relative overflow-hidden">
               <div className="absolute top-0 right-0 p-8 opacity-10">
                 <ShieldCheck className="h-32 w-32" />
               </div>
               <CardContent className="p-8 space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-6 w-6" />
-                    <h2 className="text-xl font-bold font-headline">Blockchain Confirmation</h2>
+                    <ShieldCheck className="h-6 w-6 text-accent" />
+                    <h2 className="text-xl font-bold font-headline">Blockchain Verification</h2>
                   </div>
                   <Badge variant="secondary" className="bg-white/20 text-white border-none text-[8px] h-4">AMOY TESTNET</Badge>
                 </div>
-                <p className="opacity-90 max-w-md">
-                  This record is secured on the <strong>Polygon Amoy</strong> testnet. It is publicly verifiable, immutable, and tamper-proof.
-                </p>
                 
+                <div className="bg-white/5 border border-white/10 p-6 rounded-2xl space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Search className="h-4 w-4 text-accent" />
+                    <p className="text-xs font-bold uppercase tracking-widest text-accent">How to verify on Polygonscan</p>
+                  </div>
+                  <p className="text-sm text-slate-300 leading-relaxed">
+                    This proof is stored in the <strong>"Input Data"</strong> field of your transaction. Follow these steps to see your actual lesson data on the ledger:
+                  </p>
+                  <ol className="list-decimal pl-5 text-xs text-slate-400 space-y-2">
+                    <li>Click the <strong>"Verify on AmoyScan"</strong> button below.</li>
+                    <li>Scroll down to the <strong>"Input Data"</strong> section.</li>
+                    <li>Click <strong>"View Input As"</strong> and select <strong>"UTF-8"</strong>.</li>
+                    <li>You will see the plain-text payload below.</li>
+                  </ol>
+                  
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <p className="text-[10px] font-bold uppercase opacity-60 mb-2">Raw Payload (Sent to Chain)</p>
+                    <code className="block p-3 rounded-lg bg-black/50 text-accent text-[10px] font-mono break-all">
+                      {rawPayload}
+                    </code>
+                  </div>
+                </div>
+
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20">
+                  <div className="bg-white/10 p-4 rounded-2xl border border-white/10">
                     <p className="text-[10px] font-bold uppercase opacity-60 mb-1">Contract Address</p>
                     <p className="font-mono text-[10px] truncate">0x8954...e921</p>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20">
-                    <p className="text-[10px] font-bold uppercase opacity-60 mb-1">Verification Link</p>
-                    <Button variant="secondary" size="sm" className="w-full h-8 rounded-xl gap-2 text-xs font-bold" asChild>
+                  <div className="bg-white/10 p-4 rounded-2xl border border-white/10">
+                    <p className="text-[10px] font-bold uppercase opacity-60 mb-1">Action</p>
+                    <Button variant="secondary" size="sm" className="w-full h-8 rounded-xl gap-2 text-xs font-bold bg-accent hover:bg-accent/90 text-white border-none" asChild>
                       <a href={`https://amoy.polygonscan.com/`} target="_blank" rel="noopener noreferrer">
-                        AmoyScan <ExternalLink className="h-3 w-3" />
+                        Verify on AmoyScan <ExternalLink className="h-3 w-3" />
                       </a>
                     </Button>
                   </div>
