@@ -1,4 +1,3 @@
-
 # Dial A Tutor - Immutable Proof of Learning
 
 Dial A Tutor is a voice-first educational platform designed to bridge the digital learning divide. It allows students in low-connectivity regions to receive oral lessons via any phone and earn immutable, database-backed "Proof of Learning" credentials.
@@ -6,39 +5,30 @@ Dial A Tutor is a voice-first educational platform designed to bridge the digita
 ## Features
 
 - **Voice-First Interaction:** Simulated IVR (Interactive Voice Response) system using AI for oral lesson delivery and evaluation.
-- **AI-Powered Tutoring:** Leverages Google Gemini (via Genkit) to generate dynamic lessons and evaluate student responses with strict academic guardrails.
-- **Offline Mode:** A toggle in the Lesson interface that mocks AI responses and queues writes locally using Firestore persistence, allowing for demos even without active internet.
+- **AI-Powered Tutoring:** Leverages Google Gemini 2.0 (via Genkit) to generate dynamic lessons and evaluate student responses.
+- **Offline Mode:** A toggle in the Lesson interface that mocks AI responses and queues writes locally using Firestore persistence.
 - **Blockchain Verification:** Lessons are minted as Proof of Learning tokens on the **Polygon Amoy Testnet**.
 - **Impact Verifier Dashboard:** A public ledger for funders and NGOs to audit educational outcomes in real-time.
 
 ## Setup & Environment Variables
 
-To run this application with live services, create a `.env` file (or set these in your Firebase App Hosting Secrets):
+To transition from **Simulation Mode** to **Live Mode**, you must set the following variables in your `.env` file:
 
-### AI Integration (Gemini)
-- `GOOGLE_GENAI_API_KEY`: Your API key from Google AI Studio. Ensure the "Generative Language API" is enabled.
-- `GOOGLE_GENAI_MODEL`: (Optional) Override the default model (`googleai/gemini-2.5-flash`).
+### 1. AI Integration (Gemini)
+- `GOOGLE_GENAI_API_KEY`: Your API key from [Google AI Studio](https://aistudio.google.com/).
 
-### SMS Integration (Twilio)
-- `TWILIO_ACCOUNT_SID`
-- `TWILIO_AUTH_TOKEN`
-- `TWILIO_PHONE_NUMBER`
+### 2. Blockchain Integration (Polygon Amoy)
+To record real learning proofs on-chain:
+- **`BLOCKCHAIN_RPC_URL`**: Create an account at [Alchemy](https://www.alchemy.com/), create a new App for "Polygon Amoy", and copy the HTTPS RPC URL.
+- **`MINTER_PRIVATE_KEY`**: 
+    1. Open your MetaMask (or similar) wallet.
+    2. Switch to the **Polygon Amoy Testnet**.
+    3. Export your Private Key from Account Details.
+    4. **Gas Fees:** Ensure you have "Amoy MATIC" in this wallet. You can get free test tokens from the [Polygon Faucet](https://faucet.polygon.technology/).
+- **`CONTRACT_ADDRESS`**: Use the provided default or deploy your own ERC-721/1155 contract.
 
-### Blockchain Integration (Polygon Amoy)
-The platform supports **live minting** to the Polygon Amoy testnet. 
-- `BLOCKCHAIN_RPC_URL`: Your Alchemy or Infura RPC URL for Amoy.
-- `MINTER_PRIVATE_KEY`: A private key with Amoy MATIC to cover gas.
-- `CONTRACT_ADDRESS`: (Optional) The address of your deployed Proof of Learning contract.
-
-*If these are missing, the system defaults to **Simulation Mode**, generating valid-looking hashes and transcriptions for demo purposes.*
-
-## Tech Stack
-
-- **Framework:** [Next.js 15 (App Router)](https://nextjs.org/)
-- **Backend/AI:** [Genkit](https://firebase.google.com/docs/genkit)
-- **Blockchain:** [Ethers.js](https://docs.ethers.org/)
-- **Database:** [Firebase Firestore](https://firebase.google.com/products/firestore)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/) & [ShadCN UI](https://ui.shadcn.com/)
+### 3. SMS Integration (Twilio)
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`: (Optional) For sending automated SMS reports.
 
 ---
 
