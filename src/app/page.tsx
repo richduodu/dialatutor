@@ -188,9 +188,13 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16">
             <div className="col-span-2">
               <Link href="/" className="flex items-center gap-2 mb-6">
-                <div className="rounded-lg bg-primary p-1.5 text-primary-foreground">
-                  <Zap className="h-6 w-6" />
-                </div>
+                <Image 
+                  src="/images/metaschool.png" 
+                  alt="Metaschool Logo" 
+                  width={32} 
+                  height={32} 
+                  className="rounded-md"
+                />
                 <span className="text-2xl font-black tracking-tighter text-primary">Dial A Tutor</span>
               </Link>
               <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">

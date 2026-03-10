@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { ShieldCheck, BookOpen, BarChart3, Phone, User, LogOut } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -25,10 +26,14 @@ export function Navbar() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
-            <div className="rounded-lg bg-primary p-1.5 text-primary-foreground">
-              <BookOpen className="h-6 w-6" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-primary">Dial A Tutor</span>
+            <Image 
+              src="/images/metaschool.png" 
+              alt="Metaschool Logo" 
+              width={32} 
+              height={32} 
+              className="rounded-md"
+            />
+            <span className="text-xl font-black tracking-tighter text-primary">Dial A Tutor</span>
           </Link>
         </div>
         <div className="flex items-center gap-4 md:gap-6">
