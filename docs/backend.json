@@ -32,7 +32,6 @@
       "required": [
         "id",
         "externalAuthId",
-        "phoneNumber",
         "name",
         "createdAt"
       ]
@@ -265,7 +264,8 @@
   "auth": {
     "providers": [
       "password",
-      "anonymous"
+      "anonymous",
+      "google.com"
     ]
   },
   "firestore": {
