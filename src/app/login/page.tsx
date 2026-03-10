@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -35,11 +36,12 @@ export default function LoginPage() {
 
   const grades = Array.from({ length: 12 }, (_, i) => `Grade ${i + 1}`)
 
+  // Direct redirection when user is detected
   useEffect(() => {
-    if (!isUserLoading && user && !isSubmitting && !isGoogleSubmitting) {
+    if (user) {
       router.push("/lesson")
     }
-  }, [user, isUserLoading, router, isSubmitting, isGoogleSubmitting])
+  }, [user, router])
 
   const getEmailFromPhone = (phone: string) => {
     const cleanPhone = phone.replace(/\+/g, '')
@@ -72,7 +74,7 @@ export default function LoginPage() {
         title: "Welcome!",
         description: `Logged in as ${loggedUser.displayName}`,
       })
-      router.push("/lesson")
+      // Successful login will be picked up by the useEffect hook
     } catch (error: any) {
       console.error("Google Auth Error:", error)
       
@@ -86,7 +88,6 @@ export default function LoginPage() {
         description: message,
         variant: "destructive"
       })
-    } finally {
       setIsGoogleSubmitting(false)
     }
   }
@@ -136,14 +137,12 @@ export default function LoginPage() {
           title: "Account Created!",
           description: `Welcome to Dial A Tutor, ${fullName}.`,
         })
-        router.push("/lesson")
       } else if (mode === 'login') {
         await signInWithEmailAndPassword(auth, email, pin)
         toast({
           title: "Logged In",
           description: "Resuming your learning journey.",
         })
-        router.push("/lesson")
       }
     } catch (error: any) {
       console.error("Firebase Auth Error:", error.code, error.message)
@@ -174,7 +173,6 @@ export default function LoginPage() {
         description: message,
         variant: "destructive"
       })
-    } finally {
       setIsSubmitting(false)
     }
   }
@@ -341,23 +339,8 @@ export default function LoginPage() {
                       />
                     </svg>
                   )}
-                  {isGoogleSubmitting ? "Authenticating..." : "Sign in with Google"}
+                  {isGoogleSubmitting ? "Connecting..." : "Sign in with Google"}
                 </Button>
-                
-                {(mode === 'register' || isSubmitting || isGoogleSubmitting) && (
-                  <div className="mt-4 p-3 bg-primary/5 rounded-xl border border-primary/10 flex gap-3">
-                    <AlertTriangle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="text-[10px] text-muted-foreground leading-relaxed">
-                        <strong>Troubleshooting:</strong> If you see "blocked" errors, check the following:
-                      </p>
-                      <ul className="list-disc pl-4 text-[9px] text-muted-foreground space-y-0.5">
-                        <li>Google Cloud Console: Ensure "Identity Toolkit API" is not blocked by your API Key restrictions.</li>
-                        <li>Firebase Console: Ensure "Enable create (sign-up)" is ON in Auth Settings.</li>
-                      </ul>
-                    </div>
-                  </div>
-                )}
               </div>
             ) : (
               <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
