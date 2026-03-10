@@ -7,7 +7,7 @@ import { VoiceRecorder } from "@/components/voice-recorder"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, BookOpen, Sparkles, RefreshCw, Database, WifiOff, Wifi, Info, Link as LinkIcon, ShieldCheck } from "lucide-react"
+import { CheckCircle, ExternalLink, Loader2, Send, Smartphone, BrainCircuit, BookOpen, Sparkles, RefreshCw, Database, WifiOff, Wifi, Info, ShieldCheck, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
@@ -19,7 +19,6 @@ import { generateLesson } from "@/ai/flows/generate-lesson-flow"
 import { notifyStudent } from "@/ai/flows/notify-student-flow"
 import { mintProof } from "@/ai/flows/mint-proof-flow"
 import { useToast } from "@/hooks/use-toast"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function LessonPage() {
   const { user, isUserLoading } = useUser()
@@ -35,6 +34,7 @@ export default function LessonPage() {
   const [mintingStatus, setMintingStatus] = useState<'idle' | 'minting' | 'completed'>('idle')
   const [txHash, setTxHash] = useState<string>("")
   const [contractAddress, setContractAddress] = useState<string>("")
+  const [mintMode, setMintMode] = useState<'live' | 'simulated' | null>(null)
   const [lesson, setLesson] = useState<{ id: string, title: string, content: string, expectedAnswer: string } | null>(null)
 
   const studentRef = useMemoFirebase(() => {
@@ -84,30 +84,20 @@ export default function LessonPage() {
         setDocumentNonBlocking(profileRef, {
           id: user.uid,
           externalAuthId: user.uid,
-          phoneNumber: user.phoneNumber || "Simulated Phone",
+          phoneNumber: user.phoneNumber || "Google Authenticated",
           name: user.displayName || `Learner ${user.uid.slice(0, 5)}`,
           gradeLevel: gradeLevel,
           createdAt: new Date().toISOString()
         }, { merge: true })
       }
 
-      if (isOfflineMode) {
-        await new Promise(r => setTimeout(r, 1500))
-        setLesson({
-          id: crypto.randomUUID(),
-          title: `Intro to ${subject}`,
-          content: `Explain the fundamental concept of ${subject} for ${gradeLevel} students.`,
-          expectedAnswer: "A clear and concise explanation showing core understanding."
-        })
-      } else {
-        const generatedLesson = await generateLesson({ subject, gradeLevel })
-        setLesson({
-          id: crypto.randomUUID(),
-          title: generatedLesson.title,
-          content: generatedLesson.content,
-          expectedAnswer: generatedLesson.expectedAnswer
-        })
-      }
+      const generatedLesson = await generateLesson({ subject, gradeLevel })
+      setLesson({
+        id: crypto.randomUUID(),
+        title: generatedLesson.title,
+        content: generatedLesson.content,
+        expectedAnswer: generatedLesson.expectedAnswer
+      })
       setStep(1)
     } catch (error: any) {
       const isQuotaError = error?.message?.includes('429') || error?.message?.includes('RESOURCE_EXHAUSTED');
@@ -130,7 +120,7 @@ export default function LessonPage() {
     const attemptId = crypto.randomUUID()
     const now = new Date().toISOString()
     
-    // 1. Save Lesson Attempt to Firestore
+    // Save Lesson Attempt
     const attemptRef = doc(db, 'students', studentId, 'lessonAttempts', attemptId)
     setDocumentNonBlocking(attemptRef, {
       id: attemptId,
@@ -148,19 +138,16 @@ export default function LessonPage() {
     }, { merge: true })
 
     if (evaluation.isCorrect) {
-      // 2. Trigger UI Transition to Minting
       setStep(2)
       setMintingStatus('minting')
 
       try {
-        // 3. Trigger Blockchain Minting (Server Action)
         const mintResult = await mintProof({
           studentId,
           lessonTitle: lesson.title,
           grade: evaluation.score
         })
 
-        // 4. Save Proof Data to private and public collections
         const proofId = crypto.randomUUID()
         const proofData = {
           id: proofId,
@@ -182,20 +169,19 @@ export default function LessonPage() {
         setDocumentNonBlocking(doc(db, 'students', studentId, 'proofsOfLearning', proofId), proofData, { merge: true })
         setDocumentNonBlocking(doc(db, 'proofsOfLearning_public', proofId), proofData, { merge: true })
 
-        // 5. Create Student Report for Audit/SMS Trigger
+        // Create Report
         const reportId = crypto.randomUUID()
         setDocumentNonBlocking(doc(db, 'students', studentId, 'studentReports', reportId), {
           id: reportId,
           studentId,
           generatedDate: now,
-          reportContent: `Student completed "${lesson.title}" with a comprehension score of ${evaluation.score}%. Verification hash: ${mintResult.transactionHash}`,
+          reportContent: `Student completed "${lesson.title}" with score ${evaluation.score}%. Verification hash: ${mintResult.transactionHash}`,
           lessonAttemptIds: [attemptId],
           overallGrade: evaluation.score,
           sentViaSms: !isOfflineMode && !!studentProfile?.phoneNumber,
           sentDate: !isOfflineMode ? now : null
         }, { merge: true })
 
-        // 6. Trigger Backend Notification (Server Action)
         if (!isOfflineMode && studentProfile?.phoneNumber) {
           notifyStudent({
             phoneNumber: studentProfile.phoneNumber,
@@ -204,23 +190,21 @@ export default function LessonPage() {
           }).catch(err => console.error("[BACKEND] Notification Flow failed:", err));
         }
 
-        // 7. Final UI Step
         setTxHash(mintResult.transactionHash)
         setContractAddress(mintResult.contractAddress)
+        setMintMode(mintResult.mode)
         setMintingStatus('completed')
         setStep(3)
 
       } catch (err) {
         console.error("[BLOCKCHAIN] Minting Flow failed:", err)
         toast({
-          title: "Blockchain Minting Failed",
-          description: "We couldn't record your achievement on-chain. Your progress is saved locally.",
+          title: "Blockchain Link Failed",
+          description: "We couldn't record your achievement on-chain. Progress saved locally.",
           variant: "destructive"
         })
-        setStep(1) // Return to lesson so they can see the grade
+        setStep(1)
       }
-    } else {
-      // If failed, we stay on step 1 so they can retake it
     }
   }
 
@@ -233,9 +217,7 @@ export default function LessonPage() {
     )
   }
 
-  if (!user) {
-    return null
-  }
+  if (!user) return null
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -249,22 +231,8 @@ export default function LessonPage() {
           </div>
           <div className="flex flex-col items-end gap-2">
             <Badge variant="outline" className="bg-white px-3 py-1 font-mono uppercase">
-              Learner: {studentProfile?.name || user?.uid.slice(0, 5)}
+              Learner: {studentProfile?.name || user?.displayName || user?.uid.slice(0, 5)}
             </Badge>
-            {step === 0 && (
-              <div className="flex items-center space-x-2 bg-white/50 px-3 py-1.5 rounded-full border border-dashed">
-                <Label htmlFor="demo-mode" className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1 cursor-pointer">
-                  {isOfflineMode ? <WifiOff className="h-3 w-3 text-orange-500" /> : <Wifi className="h-3 w-3 text-green-500" />}
-                  Offline Mode
-                </Label>
-                <Switch 
-                  id="demo-mode" 
-                  checked={isOfflineMode} 
-                  onCheckedChange={setIsOfflineMode} 
-                  className="scale-75"
-                />
-              </div>
-            )}
           </div>
         </div>
 
@@ -323,13 +291,6 @@ export default function LessonPage() {
                   </>
                 )}
               </Button>
-              {isOfflineMode && (
-                <div className="flex items-center justify-center gap-2 mt-2">
-                  <Badge variant="outline" className="text-[10px] bg-orange-50 text-orange-600 border-orange-200 uppercase px-3">
-                    <WifiOff className="h-2 w-2 mr-1" /> Offline Mode Active
-                  </Badge>
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
@@ -364,9 +325,6 @@ export default function LessonPage() {
                     <Badge variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-none">
                       {gradeLevel}
                     </Badge>
-                    {isOfflineMode && (
-                      <Badge variant="outline" className="text-[8px] border-white/40 text-white">OFFLINE MODE</Badge>
-                    )}
                   </div>
                   <span className="text-2xl mt-2 font-headline">{lesson.title}</span>
                 </CardTitle>
@@ -402,7 +360,7 @@ export default function LessonPage() {
             <div className="max-w-xs mx-auto">
               <Progress value={66} className="h-2" />
               <p className="text-[10px] uppercase font-bold mt-2 text-muted-foreground">
-                {isOfflineMode ? "Queuing for background sync..." : "Broadcasting Transaction..."}
+                Broadcasting Transaction...
               </p>
             </div>
           </div>
@@ -418,16 +376,16 @@ export default function LessonPage() {
                 </div>
                 <h2 className="text-3xl font-extrabold mb-2 font-headline">Achievement Unlocked!</h2>
                 <p className="text-muted-foreground mb-8">
-                  Your response was verified and your Proof of Learning has been permanently recorded on the blockchain.
+                  Your response was verified and your Proof of Learning has been permanently recorded.
                 </p>
 
-                {isOfflineMode && (
+                {mintMode === 'simulated' && (
                   <Card className="mb-6 bg-orange-50 border-orange-100 text-orange-800 text-left">
                     <CardContent className="p-4 flex gap-3 items-start">
-                      <Info className="h-5 w-5 shrink-0 mt-0.5" />
+                      <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-xs font-bold uppercase mb-1">Offline Record Created</p>
-                        <p className="text-xs opacity-90">This achievement was recorded in offline mode. It is stored locally and will sync once internet is regained.</p>
+                        <p className="text-xs font-bold uppercase mb-1">Simulated Record</p>
+                        <p className="text-xs opacity-90 leading-snug">The blockchain environment variables are not set. This transaction is simulated and will not appear on a live block explorer.</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -438,45 +396,35 @@ export default function LessonPage() {
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Database className="h-4 w-4 text-primary" />
-                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Blockchain Transaction Proof</p>
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Blockchain Proof</p>
                       </div>
-                      <Badge variant="secondary" className="text-[8px] h-4 bg-primary/10 text-primary border-none">AMOY TESTNET</Badge>
+                      <Badge variant="secondary" className={`text-[8px] h-4 border-none ${mintMode === 'simulated' ? 'bg-orange-100 text-orange-600' : 'bg-primary/10 text-primary'}`}>
+                        {mintMode === 'simulated' ? 'SIMULATED' : 'AMOY TESTNET'}
+                      </Badge>
                     </div>
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">Network</span>
-                        <Badge variant="outline" className="text-[10px] font-mono">POLYGON AMOY</Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">Contract</span>
-                        <span className="font-mono text-[10px] truncate max-w-[120px]">{contractAddress}</span>
+                        <Badge variant="outline" className="text-[10px] font-mono">{mintMode === 'simulated' ? 'AMOY (SIMULATED)' : 'POLYGON AMOY'}</Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">Hash</span>
                         <span className="font-mono text-[10px] truncate max-w-[120px]">{txHash}</span>
                       </div>
-                      <Button className="w-full mt-2 gap-2 rounded-xl h-10 text-xs font-bold" variant="outline" asChild>
-                        <a href={`https://amoy.polygonscan.com/tx/${txHash}`} target="_blank" rel="noopener noreferrer">
-                          Verify on AmoyScan <ExternalLink className="h-3 w-3" />
-                        </a>
+                      <Button 
+                        className="w-full mt-2 gap-2 rounded-xl h-10 text-xs font-bold" 
+                        variant="outline" 
+                        disabled={mintMode === 'simulated'}
+                        asChild
+                      >
+                        {mintMode === 'simulated' ? (
+                          <span>Hash not on explorer in Simulation Mode</span>
+                        ) : (
+                          <a href={`https://amoy.polygonscan.com/tx/${txHash}`} target="_blank" rel="noopener noreferrer">
+                            Verify on AmoyScan <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
                       </Button>
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-                    <div className="flex items-start gap-3">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <Send className="h-4 w-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase text-primary">SMS Confirmation Dispatched</p>
-                        <p className="text-sm text-muted-foreground leading-snug">
-                          {isOfflineMode 
-                            ? "Offline: SMS will be sent once signal is regained." 
-                            : `"Congrats! You completed your ${subject} lesson. Your immutable certificate is ready."`
-                          }
-                        </p>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -489,6 +437,7 @@ export default function LessonPage() {
                     setStep(0)
                     setLesson(null)
                     setTxHash("")
+                    setMintMode(null)
                   }}>
                     Take Another Lesson
                   </Button>
