@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Smartphone, LogIn, UserPlus, Loader2, User, Lock, HelpCircle, ArrowLeft, ShieldAlert } from "lucide-react"
+import { Smartphone, LogIn, UserPlus, Loader2, User, Lock, HelpCircle, ArrowLeft, ShieldAlert, AlertTriangle } from "lucide-react"
 import { useAuth, useUser, useFirestore } from "@/firebase"
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
 import { doc, setDoc } from "firebase/firestore"
@@ -41,6 +41,7 @@ export default function LoginPage() {
   }, [user, isUserLoading, router, isSubmitting])
 
   const getEmailFromPhone = (phone: string) => {
+    // Standardize phone number to use as an email identifier
     const cleanPhone = phone.replace(/\+/g, '')
     return `${cleanPhone}@dialatutor.com`
   }
@@ -71,6 +72,7 @@ export default function LoginPage() {
     
     try {
       if (mode === 'register') {
+        // Attempting to create a persistent user account with Phone-as-Email
         const userCredential = await createUserWithEmailAndPassword(auth, email, pin)
         const newUser = userCredential.user
 
@@ -100,22 +102,27 @@ export default function LoginPage() {
         router.push("/lesson")
       }
     } catch (error: any) {
-      console.error("Auth error:", error)
+      console.error("Firebase Auth Error:", error.code, error.message)
+      
+      let title = "Access Denied"
       let message = "Please check your credentials and try again."
       
-      // Handle the specific error where signups are blocked in the Firebase Console
+      // Specific handling for common Firebase Identity Platform configuration errors
       if (error.message?.includes('signup-are-blocked') || error.code === 'auth/operation-not-allowed') {
-        message = "Sign-up is blocked in your Firebase Console. Please go to Authentication > Settings and enable 'Allow users to sign up'."
+        title = "Sign-up Blocked"
+        message = "New registrations are currently restricted. Please ensure 'Enable create (sign-up)' is ON in your Firebase Console (Settings > User sign-up)."
       } else if (error.code === 'auth/user-not-found') {
-        message = "No account found with this phone number. Please register."
-      } else if (error.code === 'auth/wrong-password') {
-        message = "Incorrect PIN. Please try again."
+        message = "No account found with this phone number. Please register first."
+      } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        message = "Incorrect PIN. Please try again or contact a coordinator."
       } else if (error.code === 'auth/email-already-in-use') {
-        message = "This phone number is already registered. Please login."
+        message = "This phone number is already registered. Try logging in instead."
+      } else if (error.code === 'auth/weak-password') {
+        message = "Your PIN is too weak. Please use a unique 6-digit number."
       }
 
       toast({
-        title: "Access Denied",
+        title,
         description: message,
         variant: "destructive"
       })
@@ -245,6 +252,15 @@ export default function LoginPage() {
                   )} 
                   {isSubmitting ? "Connecting..." : mode === 'login' ? "Start Learning" : "Register & Start"}
                 </Button>
+                
+                {mode === 'register' && (
+                  <div className="mt-4 p-3 bg-primary/5 rounded-xl border border-primary/10 flex gap-3">
+                    <AlertTriangle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
+                      <strong>Admin Note:</strong> If registration fails, ensure "Enable create (sign-up)" is ON in the Firebase Auth Settings console.
+                    </p>
+                  </div>
+                )}
               </form>
             ) : (
               <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
