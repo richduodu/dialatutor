@@ -3,13 +3,17 @@
 
 Dial A Tutor is a voice-first educational platform designed to bridge the digital learning divide. It allows students in low-connectivity regions to receive oral lessons via any phone and earn immutable, database-backed "Proof of Learning" credentials.
 
-## Features
+## Project Structure & Assets
 
-- **Voice-First Interaction:** Simulated IVR (Interactive Voice Response) system using AI for oral lesson delivery and evaluation.
-- **AI-Powered Tutoring:** Leverages Google Gemini 2.0 (via Genkit) to generate dynamic lessons and evaluate student responses.
-- **Offline Mode:** A toggle in the Lesson interface that mocks AI responses and queues writes locally using Firestore persistence.
-- **Blockchain Verification:** Lessons are minted as Proof of Learning tokens on the **Polygon Amoy Testnet**.
-- **Impact Verifier Dashboard:** A public ledger for funders and NGOs to audit educational outcomes in real-time.
+### Logo & Images
+To ensure the logo loads correctly, ensure your folder structure looks like this:
+```
+/root
+  /public
+    /images
+      metaschool.png
+```
+The application references this as `/images/metaschool.png`.
 
 ## Setup & Environment Variables
 
